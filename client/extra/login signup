@@ -1,0 +1,117 @@
+const [tab,setTab] = useState("Login");
+    const [name, setName] = useState("")
+    const [email, setEmail] = useState("")
+    const [password, setPassword] = useState("")
+    // const {senderId, setSenderId} = useContext(UserContext)
+    // const navigate = useNavigate()
+    //     async function loginFunction() {
+    //         const res = await fetch("http://localhost:3000/api/user/login",{
+    //             method: "POST",
+    //             headers: {
+    //                 "Content-Type": "application/json",
+    //             },
+    //             credentials: "include",
+    //             body: JSON.stringify({
+    //                 email: email,
+    //                 password: password
+    //             })})
+    //         const data = await res.json(); //data gives useData token and message
+    //         if(!data) console.log("server error");
+    //         // setSenderId(data.userData._id)
+    //         // console.log("data: ",data);
+    //         if(res.status === 200 || res.status === 201) {
+    //             toast.success("Logged in successfully!")
+    //         }
+    //         navigate('/')
+    //     }
+
+    //     async function signupFunction() {
+    //         const res = await fetch("http://localhost:3000/api/user/signup",{
+    //             method: "POST",
+    //             headers: {
+    //                 "Content-Type": "application/json"
+    //             },
+    //             credentials: "include",
+    //             body: JSON.stringify({
+    //                 name: name,
+    //                 email: email,
+    //                 password: password
+    //             })
+    //         });
+    //         const data = await res.json();
+    //         if(!data) console.log("server error");
+    //         // console.log(data);
+            
+    //         if(res.status === 200 || res.status === 201) {
+    //             toast.success(" You are registered! Now Log In")
+    //         }
+            
+    //     }
+
+  return (
+    <>
+       <div className={`flex justify-center items-center h-[100dvh] w-[100dvw] bg-[url('./assets/bgf.png')] bg-cover bg-center`}>
+
+        <div className=' pt-4 bg-black/75 backdrop-blur-sm backdrop-opacity-80 rounded-bl-[20%] rounded-tr-[20%] h-[50dvh] w-[30dvw] '>
+
+         <div className='h-[5dvh] m-auto flex justify-evenly w-[45%]'>
+
+            <button className={`transition-all duration-300 hover:bg-green-200 text-black/70 text-2xl font-bold  p-3 rounded-tl-2xl ${tab=="Login" ? "bg-green-200" : 'bg-gray-200'} min-w-[50%] flex justify-center items-center`} onClick={()=> setTab("Login")}>Login</button>
+
+            <button className={`transition-all duration-300 hover:bg-green-200 text-black/70 text-2xl font-bold  p-3 rounded-br-2xl ${tab=="Signup" ? "bg-green-200" : 'bg-gray-200'} min-w-[50%] flex justify-center items-center`}  onClick={()=> setTab("Signup")}>Signup</button>
+        </div>
+        <div className='h-[80%] p-3 m-3 flex justify-center items-center'>
+
+        {tab == "Login" ? 
+                <Login email={email} setEmail={setEmail} password={password} setPassword={setPassword}/>
+                :
+                <Signup name={name} setName={setName} email={email} setEmail={setEmail} password={password} setPassword={setPassword}/>
+            }
+            </div>
+       </div>
+       </div>
+    </>
+  )
+}
+
+function Login({email,setEmail,password,setPassword, actionFnc}) {
+  return (
+    <>
+    <form className='mx-10 grid grid-rows-3 gap-3 my-3' action="" method="post">
+        <Input value={email} setter={setEmail} type="email" name="email" placeholder="email" />
+        <Input value={password} setter={setPassword} type="password" name="password" placeholder="password"/>
+        <Submit actionFnc = {actionFnc} >Login</Submit>
+    </form>
+    </>
+  )
+}
+
+function Signup({name,setName,email,setEmail,password,setPassword, actionFnc}){
+    return(
+        <>
+        <form className='mx-10 grid grid-rows-3 gap-3 my-3'>
+            <Input value={name} setter={setName} type="text" name="name" placeholder="Enter your full name" />
+            <Input value={email} setter={setEmail} type="email" name="email" placeholder="email" />
+            <Input value={password} setter={setPassword} type="password" name="password" placeholder="password"/>
+            <Submit actionFnc = {actionFnc}><p>Signup</p></Submit>
+            
+        </form>
+        </>
+    )
+}
+function Input({value,type, name,placeholder, setter}){
+    return(
+        <>
+            <input value={value} className='w-[100%] max-h-[34px] bg-white/10 rounded-2xl px-3 py-2 text-white' onChange={(e)=>setter(e.target.value)} type={type} name={name} placeholder={placeholder} />
+        </>
+    )
+}
+function Submit({children, actionFnc}){
+    return (
+        <>
+            <button onClick={(e)=>{
+                e.preventDefault()
+                actionFnc();
+            }} className='flex justify-center items-center w-[100%] h-[4dvh] bg-green-200 text-black px-4 py-2 rounded-lg'> {children} </button>
+        </>
+    )
