@@ -43,7 +43,7 @@ io.on("connection", (socket) => {
     });
 });
 app.get('/', (req, res) => {
-    res.send('Home');
+    res.send('server is running');
 })
 
 app.use('/user', userRouter);

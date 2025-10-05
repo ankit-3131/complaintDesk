@@ -1,6 +1,6 @@
 import Ticket from '../models/ticket.js'
 
-export async function handleCreateTicket() {
+export async function handleCreateTicket(req,res) {
     
 }
 

@@ -24,11 +24,11 @@ const userSchema = new mongoose.Schema({
     },
     profilePicture:{
         type: String,
-        default: "https://www.gravatar.com/avatar/"
     },
     role:{
         type: String,
-        enum: ['Citizen', 'Staff']
+        enum: ['Citizen', 'Staff'],
+        default: 'Citizen'
     }
 })
 // module.exports = mongoose.model('User', userSchema);
