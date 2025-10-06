@@ -2,7 +2,7 @@ import Ticket from '../models/ticket.js'
 
 export async function handleCreateTicket(req,res) {
     try {
-    const { title, category, priority, citizenId, evidence } = req.body;
+    const { title, description, category, priority, citizenId, evidence } = req.body;
 
     if (!title || !category || !citizenId) {
       return res.status(400).json({ message: "Title, category, and citizenId are required" });
@@ -10,6 +10,7 @@ export async function handleCreateTicket(req,res) {
 
     const newTicket = new Ticket({
       title,
+      description,
       category,
       priority: priority || "Low",
       citizenId,

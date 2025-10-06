@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
-import { Button } from "@mui/material";
+import {login_API} from "../api/userApi";
 
 const emailRegex = /^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$/;
 const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d!@#$%^&*]{6,}$/;
@@ -39,8 +39,9 @@ function Login() {
 
     setLoading(true);
     try {
-      toast.success("Login successful!");
-      navigate("/");
+      const res = await login_API(form);
+      toast.success(res.message || "Login successful!");
+      navigate("/"); // redirect to homepage
     } catch (err) {
       toast.error(err.response?.data?.message || "Login failed");
     } finally {
@@ -50,21 +51,25 @@ function Login() {
 
   return (
     <div className="flex flex-col min-h-screen bg-gradient-to-br from-black via-gray-900 to-gray-800">
-      <div className="flex justify-between items-center p-6 shadow-lg">
+      
+      {/* Navbar */}
+      <div className="flex justify-between items-center p-6 backdrop-blur-md bg-white/10 border border-white/20 rounded-xl m-4 shadow-lg">
         <button
-    onClick={() => navigate("/")}
-    className="px-4 py-2 rounded-lg bg-white/10 backdrop-blur-md border border-white/20 text-white font-semibold hover:scale-105 transition-transform"
-  >
+          onClick={() => navigate("/")}
+          className="px-4 py-2 rounded-lg bg-white/10 backdrop-blur-md border border-white/20 text-white font-semibold hover:scale-105 transition-transform"
+        >
           Home
         </button>
+
         <button
-    onClick={() => navigate("/signup")}
-    className="px-4 py-2 rounded-lg bg-white/10 backdrop-blur-md border border-white/20 text-white font-semibold hover:scale-105 transition-transform"
-  >
+          onClick={() => navigate("/signup")}
+          className="px-4 py-2 rounded-lg bg-white/10 backdrop-blur-md border border-white/20 text-white font-semibold hover:scale-105 transition-transform"
+        >
           Sign Up
         </button>
       </div>
 
+      {/* Login Form */}
       <div className="flex items-center justify-center flex-1 p-4">
         <form
           onSubmit={handleSubmit}
@@ -78,7 +83,7 @@ function Login() {
             placeholder="Email *"
             value={form.email}
             onChange={handleChange}
-            className="px-4 py-2 rounded-lg bg-white/20 text-white placeholder-white/60 border border-white/20 focus:outline-none focus:ring-2 focus:ring-blue-400"
+            className="px-4 py-2 rounded-lg bg-white/10 backdrop-blur-md text-white placeholder-white/60 border border-white/20 focus:outline-none focus:ring-2 focus:ring-blue-400"
           />
 
           <input
@@ -87,13 +92,13 @@ function Login() {
             placeholder="Password *"
             value={form.password}
             onChange={handleChange}
-            className="px-4 py-2 rounded-lg bg-white/20 text-white placeholder-white/60 border border-white/20 focus:outline-none focus:ring-2 focus:ring-blue-400"
+            className="px-4 py-2 rounded-lg bg-white/10 backdrop-blur-md text-white placeholder-white/60 border border-white/20 focus:outline-none focus:ring-2 focus:ring-blue-400"
           />
 
           <button
             type="submit"
             disabled={loading}
-            className="py-3 rounded-lg bg-blue-600 text-white font-bold hover:bg-blue-700 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+            className="py-3 rounded-lg bg-white/10 backdrop-blur-md border border-white/20 text-white font-bold hover:scale-105 transition-transform disabled:opacity-60 disabled:cursor-not-allowed"
           >
             {loading ? "Logging In..." : "Login"}
           </button>

@@ -1,11 +1,13 @@
 import React, { useState } from "react";
 import toast from "react-hot-toast";
-import signup_API from "../api/userApi";
+import {signup_API} from "../api/userApi";
+import { Navigate, useNavigate } from "react-router";
 
 const emailRegex = /^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$/;
 const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d!@#$%^&*]{6,}$/;
 
 function Signup() {
+    const Navigate = useNavigate();
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -46,9 +48,8 @@ function Signup() {
 
     setLoading(true);
     try {
-        console.log(form);
-        
       const res = await signup_API(form);
+      Navigate('/login')
       toast.success(res.message || "Signup successful!");
 
       setForm({
