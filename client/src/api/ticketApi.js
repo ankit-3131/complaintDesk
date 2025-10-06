@@ -6,9 +6,9 @@ export default async function createTicket(ticketData) {
     const response = await axios.post(`${BACKEND_URL}/ticket/createTicket`, ticketData, {
       withCredentials: true,
     });
-    return response.data;
+    return { success: true, ...response.data };
   } catch (error) {
-    console.log(error);
+    return { success: false, message: error?.response?.data?.message || "Failed to create ticket" };
   }
 }
 

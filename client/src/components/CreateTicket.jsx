@@ -3,16 +3,17 @@ import { TextField, Button } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import createTicket from "../api/ticketApi";
 import toast from "react-hot-toast";
-import Cookies from "js-cookie";
-import {jwtDecode} from "jwt-decode";
+import axios from "axios";
+import { useEffect } from "react";
 
 
 function CreateTicket() {
-    const token = Cookies.get("token");
-    if (token) {
-    const decoded = jwtDecode(token);
-    console.log(decoded);
-    }
+    const [citizenId, setCitizenId] = useState(null);
+    useEffect(() => {
+    axios.get("http://localhost:3000/user/me", { withCredentials: true })
+      .then(res => setCitizenId(res.data.id))
+      .catch(err => console.error(err));
+  }, []);
 
   const [form, setForm] = useState({
     title: "",
@@ -31,6 +32,9 @@ function CreateTicket() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+        setForm({ ...form, citizenId: citizenId });
+        console.log(citizenId);
+        
       const ticketData = { ...form };
       if (ticketData.evidence) {
         ticketData.evidence = [{ url: ticketData.evidence }];

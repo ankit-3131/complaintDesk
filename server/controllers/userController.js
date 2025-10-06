@@ -3,7 +3,7 @@ import bcrypt from "bcryptjs";
 import jwt from 'jsonwebtoken'
 import dotenv from 'dotenv'
 dotenv.config()
-const secret = process.env.jwtsecret
+const secret = process.env.JWT_SECRET
 
 export async function handleGetUserProfile(req, res) {
   try {
@@ -45,10 +45,10 @@ export async function handleLogin(req, res) {
       name: userData.name
     };
 
-    const token = jwt.sign(payload, secret, { expiresIn: "7d" });
+  const token = jwt.sign(payload, secret, { expiresIn: "7d" });
 
     res.cookie("token", token, {
-      httpOnly: true,
+      httpOnly: false,
       sameSite: "strict",
     });
 
@@ -92,3 +92,19 @@ export async function handleSignup(req, res) {
     res.status(500).json({ message: "Internal Server Error" });
   }
 }
+
+
+export async function getMe(req, res){
+  const token = req.cookies.token;
+  if (!token) return res.status(401).json({ message: "Unauthorized" });
+
+  try {
+  const decoded = jwt.verify(token, secret);
+    console.log(decoded);
+    
+    res.json({ id: decoded.id, name: decoded.name, email: decoded.email });
+  } catch (err) {
+    res.status(403).json({ message: "Invalid token" });
+  }
+};
+
