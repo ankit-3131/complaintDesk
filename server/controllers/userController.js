@@ -81,8 +81,8 @@ export async function handleSignup(req, res) {
       password: encryptedPass,
       locality,
       phone,
-      profilePicture,
-      role: role || "citizen"
+      profilePicture: profilePicture || "https://www.gravatar.com/avatar/",
+      role: role || "Citizen"
     });
 
     await newUser.save();
