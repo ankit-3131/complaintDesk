@@ -1,3 +1,4 @@
+import axios from 'axios';
 import Ticket from '../models/ticket.js'
 
 export async function handleCreateTicket(req,res) {
@@ -117,14 +118,15 @@ export async function handleDeleteTicket(req,res) {
 
 export async function handleGetCategory(req, res) {
   try {
-    const { title } = req.query;
+    
+    const { title } = req.body;
 
     if (!title) {
       return res.status(400).json({ error: "Title query parameter is required" });
     }
 
     // Send title inside a JSON object
-    const response = await axios.post("http://localhost:5000/get_category/", { title });
+    const response = await axios.post("http://127.0.0.1:5000/get_category/", { title });
 
     res.json(response.data);
   } catch (error) {

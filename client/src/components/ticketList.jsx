@@ -19,7 +19,8 @@ function TicketList() {
         <LiquidCard
           key={ticket._id}
           title={ticket.title}
-          description={ticket.category + " | " + ticket.priority}
+          description={ticket.description}
+          description2={ticket.category + " | " + ticket.priority}
           imageUrl={ticket.evidence?.[0]?.url}
           onClick={() => console.log("View ticket:", ticket._id)}
         />

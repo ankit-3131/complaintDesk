@@ -1,7 +1,7 @@
 import React from 'react';
 
 
-function LiquidCard({ title, description, imageUrl, onClick }) {
+function LiquidCard({ title, description, description2, imageUrl, onClick }) {
   return (
     <div
       className="flex w-full h-52 ml-3 mr-3 p-6 rounded-xl bg-white/10 backdrop-blur-lg border border-white/20 shadow-lg hover:scale-[1.02] transition-all duration-300 overflow-hidden"
@@ -9,6 +9,8 @@ function LiquidCard({ title, description, imageUrl, onClick }) {
       <div className="flex flex-col justify-between w-3/4 pr-6 overflow-hidden">
         <div>
           <h1 className="text-white text-xl font-bold mb-2 truncate">{title}</h1>
+          <p className="text-white/80 text-sm line-clamp-3">{description2}</p>
+          <hr />
           <p className="text-white/80 text-sm line-clamp-3">{description}</p>
         </div>
 

@@ -9,6 +9,7 @@ import { useEffect } from "react";
 
 function CreateTicket() {
     const [citizenId, setCitizenId] = useState(null);
+    const Navigate = useNavigate();
     useEffect(() => {
     axios.get("http://localhost:3000/user/me", { withCredentials: true })
       .then(res => setCitizenId(res.data.id))
@@ -32,10 +33,21 @@ function CreateTicket() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-        setForm({ ...form, citizenId: citizenId });
+      const resp = await axios.post("http://localhost:3000/ticket/getCategory",  { title: form.title },
+  { withCredentials: true }
+  );
+  console.log(resp);
+  console.log(resp.data);
+  
+      const predictedCategory = resp.data.predicted_category;
+        setForm({ ...form, citizenId: citizenId, category: predictedCategory });
         console.log(citizenId);
         
-      const ticketData = { ...form };
+      const ticketData = {
+        ...form,
+        citizenId: citizenId,
+        category: predictedCategory,
+       };
       if (ticketData.evidence) {
         ticketData.evidence = [{ url: ticketData.evidence }];
       } else {
@@ -59,7 +71,14 @@ function CreateTicket() {
   onSubmit={handleSubmit}
   className="flex flex-col gap-6 bg-white/10 backdrop-blur-lg p-8 rounded-2xl shadow-2xl w-full max-w-md mx-auto border border-white/20"
 >
-  <h2 className="text-white text-2xl font-extrabold text-center mb-2">
+  <div className="flex flex-row justify-start">
+    <button
+    type="button"
+    onClick={() => Navigate(-1)}
+    className="w-[20%] py-3 rounded-lg bg-white/80 border border-white/20 text-black font-semibold hover:scale-105 hover:bg-white/20 transition-all duration-300"
+  >Back</button>
+  </div>
+    <h2 className="flex justify-center content-center text-white text-2xl font-extrabold text-center mb-2">
     Create Ticket
   </h2>
 
@@ -83,7 +102,7 @@ function CreateTicket() {
     className="w-full p-3 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-white/40 resize-none"
   />
 
-  <input
+  {/* <input
     type="text"
     name="category"
     placeholder="Category"
@@ -91,7 +110,7 @@ function CreateTicket() {
     onChange={handleChange}
     required
     className="w-full p-3 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-white/40"
-  />
+  /> */}
 
   <select
     name="priority"
