@@ -1,0 +1,189 @@
+
+.page-bg {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  overflow: hidden;
+  background: linear-gradient(135deg, #0a0a0a, #1a1a1a);
+}
+
+ /* blur background effect  */
+
+.page-bg::before,
+.page-bg::after {
+  content: "";
+  position: absolute;
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle at center,
+    rgba(255, 255, 255, 0.15),
+    transparent 70%);
+  filter: blur(120px);
+  animation: floatLights 20s infinite alternate ease-in-out;
+}
+.page-bg::before { top: -200px; left: -150px; }
+.page-bg::after  { bottom: -200px; right: -150px; }
+
+@keyframes floatLights {
+  0%   { transform: translate(0, 0) scale(1); }
+  50%  { transform: translate(50px, 50px) scale(1.1); }
+  100% { transform: translate(0, 0) scale(1); }
+}
+
+/* --- Glass form container --- */
+.glass-form {
+  position: relative;
+  width: 100%;
+  max-width: 480px;
+  padding: 2.5rem;
+  border-radius: 2rem;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(20px) saturate(160%);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+  animation: floatForm 6s ease-in-out infinite alternate;
+  transition: all 0.5s ease;
+  z-index: 2;
+}
+
+@keyframes floatForm {
+  0% { transform: translateY(0px); }
+  100% { transform: translateY(-8px); }
+}
+
+ /* Hover animation */
+.glass-form:hover {
+  transform: scale(1.02);
+  box-shadow: 0 12px 40px rgba(255, 255, 255, 0.1),
+              0 8px 32px rgba(0, 0, 0, 0.3);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+
+.glass-form::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at top left,
+    rgba(255,255,255,0.25) 0%, transparent 70%);
+  opacity: 0.3;
+  pointer-events: none;
+  transition: opacity 0.5s ease;
+}
+.glass-form:hover::before { opacity: 0.6; }
+
+/* --- Title --- */
+.form-title {
+  font-size: 2rem;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.95);
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+  letter-spacing: 0.5px;
+  text-shadow: 0 0 10px rgba(255,255,255,0.2);
+  transition: transform 0.3s ease, text-shadow 0.3s ease;
+}
+.form-title:hover {
+  transform: scale(1.05);
+  text-shadow: 0 0 15px rgba(255,255,255,0.5);
+}
+
+ /* Input feilds */
+
+.form-field {
+  margin-bottom: 1.2rem;
+}
+input,
+textarea,
+select {
+  width: 100%;
+  padding: 0.9rem 1.1rem;
+  font-size: 1rem;
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  outline: none;
+  transition: all 0.3s ease;
+  box-shadow: inset 0 0 8px rgba(255,255,255,0.05);
+}
+
+
+
+input:hover, textarea:hover, select:hover,
+input:focus, textarea:focus, select:focus {
+  background: rgba(255, 255, 255, 0.18);
+  border-color: rgba(255, 255, 255, 0.45);
+  box-shadow: 0 0 15px rgba(255,255,255,0.2);
+  transform: scale(1.02);
+}
+
+
+.glass-select-wrap {
+  position: relative;
+}
+select {
+  appearance: none;
+  cursor: pointer;
+  color: #fff;
+  background-image: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05));
+}
+
+/* --- Dropdown arrow --- */
+.glass-select-wrap::after {
+  content: "▼";
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: rgba(255,255,255,0.6);
+  pointer-events: none;
+  transition: transform 0.3s ease;
+}
+.glass-select-wrap:hover::after {
+  transform: translateY(-50%) rotate(180deg);
+  color: rgba(255,255,255,0.9);
+}
+
+ /* dropdown  */
+select option {
+  background: rgba(20, 20, 20, 0.6);
+  backdrop-filter: blur(12px);
+  color: #fff;
+  border: none;
+}
+
+/* --- Submit button --- */
+.submit-wrap {
+  text-align: center;
+  margin-top: 1.8rem;
+}
+.submit-btn {
+  background: rgba(255,255,255,0.15);
+  border: 1px solid rgba(255,255,255,0.4);
+  border-radius: 1.2rem;
+  padding: 0.9rem 2.2rem;
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: #fff;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+  transition: all 0.4s ease;
+}
+.submit-btn:hover {
+  background: rgba(255,255,255,0.25);
+  transform: translateY(-4px) scale(1.05);
+  box-shadow: 0 8px 40px rgba(255,255,255,0.15),
+              0 6px 20px rgba(0,0,0,0.25);
+  cursor: pointer;
+}
+
+
+@media (max-width: 480px) {
+  .glass-form { padding: 1.8rem; }
+  .form-title { font-size: 1.6rem; }
+}
