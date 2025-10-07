@@ -36,9 +36,9 @@ function LiquidCard({ title, description, description2, imageUrl, onClick, role,
 
           {role === 'Staff' && (
             <div className="flex gap-2">
-              <button onClick={handleEdit} className="px-3 py-2 rounded-lg bg-yellow-600 text-white">Edit</button>
-              <button onClick={handleAddNote} className="px-3 py-2 rounded-lg bg-indigo-600 text-white">Add Note</button>
-              <button onClick={handleMarkDone} className="px-3 py-2 rounded-lg bg-green-600 text-white">Mark Done</button>
+              <button onClick={handleEdit} className="px-3 py-2 rounded-lg bg-yellow-300/50 text-white">Edit</button>
+              <button onClick={handleAddNote} className="px-3 py-2 rounded-lg bg-indigo-600/50 text-white">Add Note</button>
+              <button onClick={handleMarkDone} className="px-3 py-2 rounded-lg bg-green-600/50 text-white">Mark Done</button>
             </div>
           )}
         </div>
