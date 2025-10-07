@@ -114,3 +114,21 @@ export async function handleDeleteTicket(req,res) {
     res.status(500).json({ message: "Internal server error" });
   }
 }
+
+export async function handleGetCategory(req, res) {
+  try {
+    const { title } = req.query;
+
+    if (!title) {
+      return res.status(400).json({ error: "Title query parameter is required" });
+    }
+
+    // Send title inside a JSON object
+    const response = await axios.post("http://localhost:5000/get_category/", { title });
+
+    res.json(response.data);
+  } catch (error) {
+    console.error("Error fetching from Python API:", error.message);
+    res.status(500).json({ error: "Failed to connect to Python API" });
+  }
+}
