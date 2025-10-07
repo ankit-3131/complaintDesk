@@ -26,15 +26,29 @@ function MainApp() {
             variant="outlined"
           />
         </div>
-        {(!loading && user?.role === 'Citizen') && (
-          <Button
-            onClick={() => navigate('/create-ticket')}
-            className='m-0 h-[6dvh]'
-            variant="contained"
-          >
-            <AddIcon /> Create Ticket
-          </Button>
-        )}
+        <div className="flex items-center gap-4">
+          {!loading && user ? (
+            <div className="text-white/80 text-sm">
+              <div>{user.name}</div>
+              <div className="text-white/60">{user.role}</div>
+            </div>
+          ) : (
+            <div className="flex gap-2">
+              <button onClick={() => navigate('/login')} className="px-3 py-1 rounded bg-white/10 text-white">Login</button>
+              <button onClick={() => navigate('/signup')} className="px-3 py-1 rounded bg-white/10 text-white">Sign up</button>
+            </div>
+          )}
+
+          {(!loading && user?.role === 'Citizen') && (
+            <Button
+              onClick={() => navigate('/create-ticket')}
+              className='m-0 h-[6dvh]'
+              variant="contained"
+            >
+              <AddIcon /> Create Ticket
+            </Button>
+          )}
+        </div>
       </div>
       <div className='grid gap-3 p-6 items-start justify-center min-h-screen'>
         <TicketList />

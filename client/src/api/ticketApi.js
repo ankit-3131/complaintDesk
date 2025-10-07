@@ -3,8 +3,11 @@ const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
 export default async function createTicket(ticketData) {
   try {
+    const token = localStorage.getItem('token');
+    const headers = token ? { Authorization: `Bearer ${token}` } : {};
     const response = await axios.post(`${BACKEND_URL}/ticket/createTicket`, ticketData, {
       withCredentials: true,
+      headers
     });
     return { success: true, ...response.data };
   } catch (error) {
@@ -14,13 +17,52 @@ export default async function createTicket(ticketData) {
 
 export const getAllTickets = async (filters = {}) => {
   try {
+    const token = localStorage.getItem('token');
+    const headers = token ? { Authorization: `Bearer ${token}` } : {};
     const response = await axios.get(`${BACKEND_URL}/ticket/getAllTickets`, {
-    params: filters,
-    withCredentials: true,
-  });
+      params: filters,
+      withCredentials: true,
+      headers,
+    });
   return response.data;
   } catch (error) {
     console.log("server error in loading tickets",error);
     
   }
 };
+
+export async function addNote(ticketId, noteData) {
+  try {
+    const token = localStorage.getItem('token');
+    const headers = token ? { Authorization: `Bearer ${token}` } : {};
+    const res = await axios.post(`${BACKEND_URL}/ticket/ticket/${ticketId}/note`, noteData, { withCredentials: true, headers });
+    return res.data;
+  } catch (err) {
+    console.log('addNote error', err);
+    throw err;
+  }
+}
+
+export async function updateTicket(ticketId, updates) {
+  try {
+    const token = localStorage.getItem('token');
+    const headers = token ? { Authorization: `Bearer ${token}` } : {};
+    const res = await axios.patch(`${BACKEND_URL}/ticket/ticket/${ticketId}`, updates, { withCredentials: true, headers });
+    return res.data;
+  } catch (err) {
+    console.log('updateTicket error', err);
+    throw err;
+  }
+}
+
+export async function resolveTicket(ticketId) {
+  try {
+    const token = localStorage.getItem('token');
+    const headers = token ? { Authorization: `Bearer ${token}` } : {};
+    const res = await axios.post(`${BACKEND_URL}/ticket/ticket/${ticketId}/resolve`, {}, { withCredentials: true, headers });
+    return res.data;
+  } catch (err) {
+    console.log('resolveTicket error', err);
+    throw err;
+  }
+}

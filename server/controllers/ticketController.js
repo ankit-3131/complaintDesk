@@ -68,10 +68,14 @@ export async function getAllTickets(req, res) {
 export async function addTicketNote(req, res) {
   try {
     const ticketId = req.params.id;
-    const { status, updatedBy, notes } = req.body;
+    const { status, notes } = req.body;
 
-    if (!ticketId || !updatedBy)
-      return res.status(400).json({ message: "Ticket ID and updatedBy are required" });
+    if (!ticketId)
+      return res.status(400).json({ message: "Ticket ID is required" });
+
+    // require authentication
+    const updatedBy = req.userData?.id;
+    if (!updatedBy) return res.status(401).json({ message: "Unauthorized" });
 
     const ticket = await Ticket.findById(ticketId);
     if (!ticket) return res.status(404).json({ message: "Ticket not found" });
@@ -82,12 +86,63 @@ export async function addTicketNote(req, res) {
       notes: notes || ""
     });
 
+    // if status provided, update ticket.status
+    if (status) ticket.status = status;
+
     await ticket.save();
 
     res.status(200).json({ message: "Timeline updated", ticket });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Internal server error" });
+  }
+}
+
+
+export async function updateTicket(req, res) {
+  try {
+    const ticketId = req.params.id;
+    const updates = req.body;
+
+    if (!ticketId) return res.status(400).json({ message: "Ticket ID is required" });
+
+    if (req.userData?.role !== 'Staff') return res.status(403).json({ message: 'Forbidden' });
+
+    const ticket = await Ticket.findById(ticketId);
+    if (!ticket) return res.status(404).json({ message: 'Ticket not found' });
+
+    const allowed = ['title', 'description', 'category', 'priority', 'status'];
+    allowed.forEach((k) => {
+      if (updates[k] !== undefined) ticket[k] = updates[k];
+    });
+
+    await ticket.save();
+    res.status(200).json({ message: 'Ticket updated', ticket });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+}
+
+export async function markTicketResolved(req, res) {
+  try {
+    const ticketId = req.params.id;
+    if (!ticketId) return res.status(400).json({ message: 'Ticket ID is required' });
+
+    // only staff
+    if (req.userData?.role !== 'Staff') return res.status(403).json({ message: 'Forbidden' });
+
+    const ticket = await Ticket.findById(ticketId);
+    if (!ticket) return res.status(404).json({ message: 'Ticket not found' });
+
+    ticket.status = 'Resolved';
+    ticket.timeLine.push({ status: 'Resolved', updatedBy: req.userData.id, notes: 'Marked resolved by staff' });
+    await ticket.save();
+
+    res.status(200).json({ message: 'Ticket marked resolved', ticket });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Internal server error' });
   }
 }
 

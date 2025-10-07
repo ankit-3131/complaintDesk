@@ -37,9 +37,12 @@ export async function login_API(data) {
 
 export async function getMe() {
   try {
+    const token = localStorage.getItem('token');
+    const headers = { Accept: 'application/json' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
     const response = await axios.get(`${BACKEND_URL}/user/me`, {
       withCredentials: true,
-      headers: { Accept: 'application/json' }
+      headers
     });
     return response.data;
   } catch (error) {

@@ -9,7 +9,7 @@ import { UserProvider } from './contexts/UserContext';
 const theme = createTheme({
   palette: {
     mode: 'dark',
-    primary: { main: '#c9c9c9ff' },
+    primary: { main: '#d8d8d8ff' },
   },
 });
 createRoot(document.getElementById('root')).render(

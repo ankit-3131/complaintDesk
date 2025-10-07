@@ -15,6 +15,11 @@ function TicketList() {
     fetchTickets();
   }, []);
 
+  const refresh = async () => {
+    const data = await getAllTickets({});
+    setTickets(data.tickets);
+  };
+
   return (
     <div className="w-[90vw] grid grid-cols-1 gap-4 p-6">
       {tickets.map((ticket) => (
@@ -26,7 +31,7 @@ function TicketList() {
           imageUrl={ticket.evidence?.[0]?.url}
           onClick={() => console.log("View ticket:", ticket._id)}
           role={user?.role}
-          ticket={ticket}
+          ticket={{...ticket, onRefresh: refresh}}
         />
       ))}
     </div>
