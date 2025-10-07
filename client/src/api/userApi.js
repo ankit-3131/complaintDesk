@@ -34,3 +34,17 @@ export async function login_API(data) {
     console.log(error);
   }
 }
+
+export async function getMe() {
+  try {
+    const response = await axios.get(`${BACKEND_URL}/user/me`, {
+      withCredentials: true,
+      headers: { Accept: 'application/json' }
+    });
+    return response.data;
+  } catch (error) {
+    // don't spam user with toast here, return null
+    console.log('getMe error', error?.response?.data || error.message);
+    return null;
+  }
+}

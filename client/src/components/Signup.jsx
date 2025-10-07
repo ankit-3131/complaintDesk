@@ -65,7 +65,7 @@ function Signup() {
       toast.error(err.response?.data?.message || "Signup failed");
     } finally {
       setLoading(false);
-      Navigate("/user/login");
+      Navigate("/login");
     }
   };
 

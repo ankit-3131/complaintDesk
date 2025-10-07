@@ -102,7 +102,7 @@ export async function getMe(req, res){
   const decoded = jwt.verify(token, secret);
     console.log(decoded);
     
-    res.json({ id: decoded.id, name: decoded.name, email: decoded.email });
+    res.json({ id: decoded.id, name: decoded.name, email: decoded.email, role: decoded.role });
   } catch (err) {
     res.status(403).json({ message: "Invalid token" });
   }

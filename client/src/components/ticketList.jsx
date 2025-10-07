@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { getAllTickets } from "../api/ticketApi";
 import LiquidCard from "../components/LiquidCard";
+import { useUser } from "../contexts/UserContext";
 
 function TicketList() {
   const [tickets, setTickets] = useState([]);
+  const { user } = useUser();
 
   useEffect(() => {
     const fetchTickets = async () => {
@@ -23,6 +25,8 @@ function TicketList() {
           description2={ticket.category + " | " + ticket.priority}
           imageUrl={ticket.evidence?.[0]?.url}
           onClick={() => console.log("View ticket:", ticket._id)}
+          role={user?.role}
+          ticket={ticket}
         />
       ))}
     </div>

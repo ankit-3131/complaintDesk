@@ -9,9 +9,11 @@ import { Button, TextField } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import toast, { Toaster } from 'react-hot-toast';
 import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
+import { useUser } from './contexts/UserContext';
 
 function MainApp() {
   const navigate = useNavigate();
+  const { user, loading } = useUser();
   return (
     <div className='bg-black flex flex-col items-center justify-start min-h-screen gap-6 p-6'>
       <div className='p-0 flex flex-row w-[90vw] justify-between items-center h-[6dvh]'>
@@ -24,13 +26,15 @@ function MainApp() {
             variant="outlined"
           />
         </div>
-        <Button
-          onClick={() => navigate('/create-ticket')}
-          className='m-0 h-[6dvh]'
-          variant="contained"
-        >
-          <AddIcon /> Create Ticket
-        </Button>
+        {(!loading && user?.role === 'Citizen') && (
+          <Button
+            onClick={() => navigate('/create-ticket')}
+            className='m-0 h-[6dvh]'
+            variant="contained"
+          >
+            <AddIcon /> Create Ticket
+          </Button>
+        )}
       </div>
       <div className='grid gap-3 p-6 items-start justify-center min-h-screen'>
         <TicketList />
