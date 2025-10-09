@@ -10,6 +10,7 @@ import AddIcon from '@mui/icons-material/Add';
 import toast, { Toaster } from 'react-hot-toast';
 import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
 import { useUser } from './contexts/UserContext';
+import TicketView from './components/TicketView';
 import { useSearchParams } from 'react-router-dom';
 
 function MainApp() {
@@ -27,7 +28,7 @@ function MainApp() {
     handleFilterChange('search', value);
   };
   return (
-    <div className='bg-black flex flex-col items-center justify-start min-h-screen gap-6 p-6'>
+    <div className='bg-gradient-to-br from-gray-900 via-gray-800 to-gray-700 flex flex-col items-center justify-start min-h-screen gap-6 p-6'>
       <div className='p-0 flex flex-row w-[90vw] justify-between items-center h-[6dvh]'>
         <h1 className='text-white text-lg font-extrabold'>ComplaintDesk</h1>
         <div className='w-[40vw]'>
@@ -97,6 +98,7 @@ function App() {
       <Routes>
         <Route path='/' element={<MainApp />} />
         <Route path='/create-ticket' element={<CreateTicket />} />
+        <Route path='/ticket/:id' element={<TicketView />} />
         <Route path='/login' element={<Login />} />
         <Route path='/signup' element={<Signup />} />
       </Routes>

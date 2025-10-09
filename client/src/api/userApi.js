@@ -46,7 +46,6 @@ export async function getMe() {
     });
     return response.data;
   } catch (error) {
-    // don't spam user with toast here, return null
     console.log('getMe error', error?.response?.data || error.message);
     return null;
   }

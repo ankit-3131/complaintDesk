@@ -54,3 +54,15 @@ export async function resolveTicket(ticketId) {
     throw err;
   }
 }
+
+export async function getTicket(ticketId) {
+  try {
+    const token = localStorage.getItem('token');
+    const headers = token ? { Authorization: `Bearer ${token}` } : {};
+    const res = await axios.get(`${BACKEND_URL}/ticket/ticket/${ticketId}`, { withCredentials: true, headers });
+    return res.data;
+  } catch (err) {
+    console.log('getTicket error', err);
+    throw err;
+  }
+}

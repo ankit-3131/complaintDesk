@@ -1,9 +1,15 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import createTicket from "../api/ticketApi";
+import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
 import toast from "react-hot-toast";
 import axios from "axios";
 import "./CreateTicket.css";
+import L from 'leaflet';
+import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
+import markerIcon from 'leaflet/dist/images/marker-icon.png';
+import markerShadow from 'leaflet/dist/images/marker-shadow.png';
+
 
 function CreateTicket() {
   const [citizenId, setCitizenId] = useState(null);
@@ -22,6 +28,7 @@ function CreateTicket() {
     category: "",
     priority: "Low",
     evidence: "",
+    location: null, // { type: 'Point', coordinates: [lng, lat] }
   });
 
   const navigate = useNavigate();
@@ -53,7 +60,7 @@ function CreateTicket() {
       } else {
         delete ticketData.evidence;
       }
-      const res = await createTicket(ticketData);
+  const res = await createTicket(ticketData);
       if (res && res.success) {
         toast.success("Ticket created successfully!");
         navigate("/");
@@ -64,6 +71,34 @@ function CreateTicket() {
       toast.error("Error creating ticket due to server issue");
     }
   };
+
+  delete L.Icon.Default.prototype._getIconUrl;
+
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: markerIcon2x,
+  iconUrl: markerIcon,
+  shadowUrl: markerShadow,
+});
+
+  function LocationMarker() {
+    const map = useMapEvents({
+      click(e) {
+        const { lat, lng } = e.latlng;
+        setForm(f => ({ ...f, location: { type: 'Point', coordinates: [lng, lat] } }));
+      }
+    });
+    return null;
+  }
+
+  const [mapCenter, setMapCenter] = useState([20.5937, 78.9629]);
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition((pos) => {
+        setMapCenter([pos.coords.latitude, pos.coords.longitude]);
+        setForm(f => ({ ...f, location: { type: 'Point', coordinates: [pos.coords.longitude, pos.coords.latitude] } }));
+      }, () => {});
+    }
+  }, []);
 
   return (
     <div className="page-bg flex flex-col items-center justify-center min-h-screen p-6">
@@ -124,6 +159,20 @@ function CreateTicket() {
             value={form.evidence}
             onChange={handleChange}
           />
+        </div>
+
+        <div className="form-field">
+          <label className="text-sm mb-1">Select Location (click on map)</label>
+          <div className="h-48 w-full rounded overflow-hidden">
+            <MapContainer center={mapCenter} zoom={13} style={{ height: '100%', width: '100%' }}>
+              <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+              <LocationMarker />
+              {form.location && (
+                <Marker position={[form.location.coordinates[1], form.location.coordinates[0]]} />
+              )}
+            </MapContainer>
+          </div>
+          <div className="text-xs text-white/60 mt-1">{form.location ? `Lat: ${form.location.coordinates[1].toFixed(6)}, Lng: ${form.location.coordinates[0].toFixed(6)}` : 'No location selected'}</div>
         </div>
 
         <div className="submit-wrap">

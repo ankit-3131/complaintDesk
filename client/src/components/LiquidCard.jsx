@@ -3,7 +3,10 @@ import { addNote, updateTicket as apiUpdateTicket, resolveTicket } from '../api/
 import toast from 'react-hot-toast';
 
 
+import { useNavigate } from 'react-router-dom';
+
 function LiquidCard({ title, description, description2, imageUrl, onClick, role, ticket }) {
+  const navigate = useNavigate();
   const [loadingEdit, setLoadingEdit] = useState(false);
   const [loadingNote, setLoadingNote] = useState(false);
   const [loadingResolve, setLoadingResolve] = useState(false);
@@ -51,7 +54,7 @@ function LiquidCard({ title, description, description2, imageUrl, onClick, role,
   };
 
   return (
-    <div
+    <div onClick={() => navigate(`/ticket/${ticket._id}`)} 
       className="flex w-full h-52 ml-3 mr-3 p-6 rounded-xl bg-white/10 backdrop-blur-lg border border-white/20 shadow-lg hover:scale-[1.02] transition-all duration-300 overflow-hidden"
     >
       <div className="flex flex-col justify-between w-3/4 pr-6 overflow-hidden">
@@ -64,7 +67,7 @@ function LiquidCard({ title, description, description2, imageUrl, onClick, role,
 
         <div className="flex gap-2">
           <button
-            onClick={onClick}
+            onClick={() => navigate(`/ticket/${ticket._id}`)}
             className="w-40 py-2 rounded-xl bg-white/10 backdrop-blur-lg border border-white/20 shadow-lg hover:border-[#FF4040]/50 transition-all duration-300"
           >
             <p className="text-white/80 text-sm">View</p>
