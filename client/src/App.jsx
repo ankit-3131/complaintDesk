@@ -10,10 +10,22 @@ import AddIcon from '@mui/icons-material/Add';
 import toast, { Toaster } from 'react-hot-toast';
 import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
 import { useUser } from './contexts/UserContext';
+import { useSearchParams } from 'react-router-dom';
 
 function MainApp() {
   const navigate = useNavigate();
   const { user, loading } = useUser();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const handleFilterChange = (key, value) => {
+    const params = Object.fromEntries([...searchParams]);
+    if (value) params[key] = value; else delete params[key];
+    setSearchParams(params);
+  };
+
+  const handleSearchChange = (value) => {
+    handleFilterChange('search', value);
+  };
   return (
     <div className='bg-black flex flex-col items-center justify-start min-h-screen gap-6 p-6'>
       <div className='p-0 flex flex-row w-[90vw] justify-between items-center h-[6dvh]'>
@@ -24,7 +36,28 @@ function MainApp() {
             id="outlined-basic"
             label="Search the issues by title, description.."
             variant="outlined"
+            value={searchParams.get('search') || ''}
+            onChange={(e) => handleSearchChange(e.target.value)}
           />
+        </div>
+        <div className="flex gap-2 items-center">
+          <select value={searchParams.get('status') || ''} onChange={(e)=>handleFilterChange('status', e.target.value)} className="bg-black/80 text-white px-2 py-1 rounded">
+            <option value="">All status</option>
+            <option value="Open">Open</option>
+            <option value="In Progress">In Progress</option>
+            <option value="Resolved">Resolved</option>
+          </select>
+          <select value={searchParams.get('category') || ''} onChange={(e)=>handleFilterChange('category', e.target.value)} className="bg-black/80 text-white px-2 py-1 rounded">
+            <option value="">All categories</option>
+            <option value="Road">Road</option>
+            <option value="Water">Water</option>
+            <option value="Electricity">Electricity</option>
+          </select>
+          <select value={searchParams.get('sortBy') || 'createdAt'} onChange={(e)=>handleFilterChange('sortBy', e.target.value)} className="bg-black/80 text-white px-2 py-1 rounded">
+            <option value="createdAt">Newest</option>
+            <option value="createdAt_asc">Oldest</option>
+            <option value="priority">Priority</option>
+          </select>
         </div>
         <div className="flex items-center gap-4">
           {!loading && user ? (

@@ -2,22 +2,49 @@ import React, { useEffect, useState } from "react";
 import { getAllTickets } from "../api/ticketApi";
 import LiquidCard from "../components/LiquidCard";
 import { useUser } from "../contexts/UserContext";
+import { useSearchParams } from 'react-router-dom';
 
 function TicketList() {
   const [tickets, setTickets] = useState([]);
   const { user } = useUser();
+  const [searchParams] = useSearchParams();
 
   useEffect(() => {
     const fetchTickets = async () => {
-      const data = await getAllTickets({});
-      setTickets(data.tickets);
+      const params = {};
+      const search = searchParams.get('q') || searchParams.get('search');
+      if (search) params.search = search;
+      const status = searchParams.get('status');
+      if (status) params.status = status;
+      const category = searchParams.get('category');
+      if (category) params.category = category;
+      const sortByRaw = searchParams.get('sortBy');
+      if (sortByRaw) {
+        if (sortByRaw === 'createdAt_asc') { params.sortBy = 'createdAt'; params.order = 'asc'; }
+        else params.sortBy = sortByRaw;
+      }
+      const data = await getAllTickets(params);
+      setTickets(data?.tickets ?? []);
     };
     fetchTickets();
-  }, []);
+  }, [searchParams]);
 
   const refresh = async () => {
-    const data = await getAllTickets({});
-    setTickets(data.tickets);
+    // respect current search params when refreshing
+    const params = {};
+    const search = searchParams.get('q') || searchParams.get('search');
+    if (search) params.search = search;
+    const status = searchParams.get('status');
+    if (status) params.status = status;
+    const category = searchParams.get('category');
+    if (category) params.category = category;
+    const sortByRaw = searchParams.get('sortBy');
+    if (sortByRaw) {
+      if (sortByRaw === 'createdAt_asc') { params.sortBy = 'createdAt'; params.order = 'asc'; }
+      else params.sortBy = sortByRaw;
+    }
+    const data = await getAllTickets(params);
+    setTickets(data?.tickets ?? []);
   };
 
   return (

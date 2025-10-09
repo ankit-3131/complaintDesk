@@ -46,7 +46,7 @@ const ticketSchema = new mongoose.Schema({
             timeStamp: {type: Date, default: Date.now}
         }
     ]
-})
+}, { timestamps: true });
 
 const ticketModel = mongoose.model('Ticket', ticketSchema)
 export default ticketModel

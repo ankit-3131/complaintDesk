@@ -97,16 +97,13 @@ export async function handleSignup(req, res) {
 
 
 export async function getMe(req, res){
-  // accept token from cookie or Authorization header
-  let token = req.cookies?.token;
-  if (!token && req.headers?.authorization && req.headers.authorization.startsWith('Bearer ')) {
-    token = req.headers.authorization.split(' ')[1];
-  }
+  const token = req.cookies.token;
   if (!token) return res.status(401).json({ message: "Unauthorized" });
 
   try {
-    const decoded = jwt.verify(token, secret);
-    console.log('getMe decoded', decoded);
+  const decoded = jwt.verify(token, secret);
+    console.log(decoded);
+    
     res.json({ id: decoded.id, name: decoded.name, email: decoded.email, role: decoded.role });
   } catch (err) {
     res.status(403).json({ message: "Invalid token" });

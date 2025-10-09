@@ -72,7 +72,7 @@ function LiquidCard({ title, description, description2, imageUrl, onClick, role,
 
           {role === 'Staff' && (
             <div className="flex gap-2">
-              {ticket.status != 'In Progress' && (<button onClick={handleEdit} disabled={loadingEdit} className="px-3 py-2 rounded-lg bg-yellow-300/50 text-white disabled:opacity-60">{loadingEdit ? 'Please wait...' : 'Mark in progress'}</button>
+              {ticket.status == 'Open' && (<button onClick={handleEdit} disabled={loadingEdit} className="px-3 py-2 rounded-lg bg-yellow-300/50 text-white disabled:opacity-60">{loadingEdit ? 'Please wait...' : 'Mark in progress'}</button>
               )}
               <button onClick={handleAddNote} disabled={loadingNote} className="px-3 py-2 rounded-lg bg-indigo-600/50 text-white disabled:opacity-60">{loadingNote ? 'Adding...' : 'Add Note'}</button>
               {ticket.status != 'Resolved' && (<button onClick={handleMarkDone} disabled={loadingResolve} className="px-3 py-2 rounded-lg bg-green-600/50 text-white disabled:opacity-60">{loadingResolve ? 'Please wait...' : 'Mark Done'}</button>

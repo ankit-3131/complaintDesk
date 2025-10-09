@@ -33,8 +33,21 @@ function CreateTicket() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      setForm({ ...form, citizenId: citizenId });
-      const ticketData = { ...form };
+       const resp = await axios.post("http://localhost:3000/ticket/getCategory",  { title: form.title },
+  { withCredentials: true }
+  );
+  console.log(resp);
+  console.log(resp.data);
+  
+      const predictedCategory = resp.data.predicted_category;
+        setForm({ ...form, citizenId: citizenId, category: predictedCategory });
+        console.log(citizenId);
+        
+      const ticketData = {
+        ...form,
+        citizenId: citizenId,
+        category: predictedCategory,
+       };
       if (ticketData.evidence) {
         ticketData.evidence = [{ url: ticketData.evidence }];
       } else {
@@ -79,7 +92,7 @@ function CreateTicket() {
           />
         </div>
 
-        <div className="form-field">
+        {/* <div className="form-field">
           <input
             type="text"
             name="category"
@@ -88,7 +101,7 @@ function CreateTicket() {
             onChange={handleChange}
             required
           />
-        </div>
+        </div> */}
 
         <div className="form-field glass-select-wrap">
           <select
