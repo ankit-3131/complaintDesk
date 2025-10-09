@@ -3,7 +3,7 @@ import Ticket from '../models/ticket.js'
 
 export async function handleCreateTicket(req,res) {
     try {
-    const { title, description, category, priority, citizenId, evidence } = req.body;
+  const { title, description, category, priority, citizenId, evidence, location } = req.body;
 
     if (!title || !category || !citizenId) {
       return res.status(400).json({ message: "Title, category, and citizenId are required" });
@@ -16,6 +16,7 @@ export async function handleCreateTicket(req,res) {
       priority: priority || "Low",
       citizenId,
       evidence: evidence || [],
+      location: location || undefined,
       timeLine: [
         {
           status: "Open",
@@ -99,6 +100,7 @@ export async function getAllTickets(req, res) {
       priority: 1,
       status: 1,
       category: 1,
+          location: 1,
       createdAt: 1,
       citizenId: {
         _id: '$citizen._id',
@@ -246,5 +248,30 @@ export async function handleGetCategory(req, res) {
   } catch (error) {
     console.error("Error fetching from Python API:", error.message);
     res.status(500).json({ error: "Failed to connect to Python API" });
+  }
+}
+
+export async function getTicketById(req, res) {
+  try {
+    const ticketId = req.params.id;
+    if (!ticketId) return res.status(400).json({ message: 'Ticket ID is required' });
+
+    const ticket = await Ticket.findById(ticketId)
+      .populate('citizenId', 'name email')
+      .populate({ path: 'timeLine.updatedBy', select: 'name email' });
+    if (!ticket) return res.status(404).json({ message: 'Ticket not found' });
+
+    
+    const viewer = req.userData;
+    // if (viewer) {
+    //   if (viewer.role !== 'Staff' && ticket.citizenId && ticket.citizenId._id.toString() !== viewer.id) {
+    //     return res.status(403).json({ message: 'Forbidden' });
+    //   }
+    // }
+
+    res.status(200).json({ ticket });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Internal server error' });
   }
 }
