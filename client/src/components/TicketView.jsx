@@ -61,7 +61,6 @@ function TicketView() {
           </div>
         </div>
 
-        {/* Timeline */}
         <div className="mt-6">
           <h3 className="font-bold mb-2">Timeline</h3>
           <div className="flex flex-col gap-3">
@@ -83,7 +82,7 @@ function TicketView() {
 
         {user?.role === 'Staff' && (
           <div className="mt-6 flex gap-2 justify-end">
-            <button disabled={loadingAction} onClick={async()=>{
+            {ticket.status == 'Open' && (<button disabled={loadingAction} onClick={async()=>{
               setLoadingAction(true);
               try{
                 await updateTicket(id, { status: 'In Progress' });
@@ -91,7 +90,7 @@ function TicketView() {
                 const res = await getTicket(id); setTicket(res.ticket);
               }catch(e){ toast.error(e.response?.data?.message || 'Failed'); }
               setLoadingAction(false);
-            }} className="px-4 py-2 rounded bg-yellow-500 text-black">Mark In Progress</button>
+            }} className="px-4 py-2 rounded bg-yellow-500 text-black">Mark In Progress</button> )}
 
             <button disabled={loadingAction} onClick={async()=>{
               const note = prompt('Enter note'); if(!note) return;
@@ -100,12 +99,12 @@ function TicketView() {
               setLoadingAction(false);
             }} className="px-4 py-2 rounded bg-indigo-600">Add Note</button>
 
-            <button disabled={loadingAction} onClick={async()=>{
+            {ticket.status != 'Resolved' && ( <button disabled={loadingAction} onClick={async()=>{
               if(!confirm('Mark resolved?')) return;
               setLoadingAction(true);
               try{ await resolveTicket(id); toast.success('Marked resolved'); const res = await getTicket(id); setTicket(res.ticket);}catch(e){ toast.error('Failed to resolve'); }
               setLoadingAction(false);
-            }} className="px-4 py-2 rounded bg-green-600">Mark Resolved</button>
+            }} className="px-4 py-2 rounded bg-green-600">Mark Resolved</button>)}
           </div>
         )}
 

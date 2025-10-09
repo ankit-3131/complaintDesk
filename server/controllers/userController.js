@@ -110,3 +110,14 @@ export async function getMe(req, res){
   }
 };
 
+export async function handleLogout(req, res) {
+  try {
+    // clear cookie
+    res.clearCookie('token', { httpOnly: true, sameSite: 'lax', secure: false });
+    return res.status(200).json({ message: 'Logged out' });
+  } catch (err) {
+    console.error('logout error', err);
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+}
+

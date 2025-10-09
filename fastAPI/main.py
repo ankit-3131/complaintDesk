@@ -39,7 +39,7 @@ def get_category(data: ComplaintRequest):
     best_score = sims[best_idx]
     best_category = categories[best_idx]
 
-    THRESHOLD = 0.4
+    THRESHOLD = 0.1
 
     if best_score >= THRESHOLD:
         return ComplaintResponse(predicted_category=best_category)

@@ -11,6 +11,8 @@ import toast, { Toaster } from 'react-hot-toast';
 import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
 import { useUser } from './contexts/UserContext';
 import TicketView from './components/TicketView';
+import Profile from './components/Profile';
+import { logout_API } from './api/userApi';
 import { useSearchParams } from 'react-router-dom';
 
 function MainApp() {
@@ -62,9 +64,13 @@ function MainApp() {
         </div>
         <div className="flex items-center gap-4">
           {!loading && user ? (
-            <div className="text-white/80 text-sm">
-              <div>{user.name}</div>
-              <div className="text-white/60">{user.role}</div>
+            <div className="flex items-center gap-3">
+              <div className="text-white/80 text-sm">
+                <div>{user.name}</div>
+                <div className="text-white/60">{user.role}</div>
+              </div>
+              <button onClick={() => navigate('/profile')} className="px-3 py-1 rounded bg-white/10 text-white">Profile</button>
+              <button onClick={async()=>{ try{ await logout_API(); localStorage.removeItem('token'); navigate('/'); window.location.reload(); }catch(e){ toast.error('Logout failed'); } }} className="px-3 py-1 rounded bg-red-600 text-white">Logout</button>
             </div>
           ) : (
             <div className="flex gap-2">
@@ -99,6 +105,7 @@ function App() {
         <Route path='/' element={<MainApp />} />
         <Route path='/create-ticket' element={<CreateTicket />} />
         <Route path='/ticket/:id' element={<TicketView />} />
+        <Route path='/profile' element={<Profile />} />
         <Route path='/login' element={<Login />} />
         <Route path='/signup' element={<Signup />} />
       </Routes>

@@ -50,3 +50,23 @@ export async function getMe() {
     return null;
   }
 }
+
+export async function logout_API() {
+  try {
+    const response = await axios.post(`${BACKEND_URL}/user/logout`, {}, { withCredentials: true });
+    return response.data;
+  } catch (error) {
+    console.log('logout error', error?.response?.data || error.message);
+    throw error;
+  }
+}
+
+export async function getUserProfile(id) {
+  try {
+    const response = await axios.get(`${BACKEND_URL}/user/load/${id}`);
+    return response.data;
+  } catch (error) {
+    console.log('getUserProfile error', error?.response?.data || error.message);
+    throw error;
+  }
+}
