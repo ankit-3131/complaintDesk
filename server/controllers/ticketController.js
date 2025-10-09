@@ -44,18 +44,76 @@ export async function handleCreateTicket(req,res) {
 
 export async function getAllTickets(req, res) {
   try {
-    const { status, category, citizenId } = req.query;
+    const { search, status, category, citizenId, sortBy, order } = req.query;
     const filter = {};
 
     if (status) {
       filter.status = status;
     } else {
-      filter.status = { $ne: "Resolved" };
+      filter.status = { $ne: 'Resolved' };
     }
     if (category) filter.category = category;
     if (citizenId) filter.citizenId = citizenId;
 
-    const tickets = await Ticket.find(filter).populate("citizenId", "name email");
+    if (search) {
+      const regex = new RegExp(search, 'i');
+      filter.$or = [{ title: regex }, { description: regex }];
+    }
+
+    let sort = { createdAt: -1 };
+    const sortOrder = order === 'asc' ? 1 : -1;
+    if (sortBy === 'createdAt') sort = { createdAt: sortOrder };
+    else if (sortBy === 'title') sort = { title: sortOrder };
+    else if (sortBy === 'priority') {
+      const agg = [
+  { $match: filter },
+  {
+    $addFields: {
+      priorityRank: {
+        $switch: {
+          branches: [
+            { case: { $eq: ['$priority', 'High'] }, then: 3 },
+            { case: { $eq: ['$priority', 'Medium'] }, then: 2 },
+            { case: { $eq: ['$priority', 'Low'] }, then: 1 }
+          ],
+          default: 0
+        }
+      }
+    }
+  },
+  { $sort: { priorityRank: sortOrder, createdAt: -1 } },
+  {
+    $lookup: {
+      from: 'users',
+      localField: 'citizenId',
+      foreignField: '_id',
+      as: 'citizen'
+    }
+  },
+  { $unwind: { path: '$citizen', preserveNullAndEmptyArrays: true } },
+  {
+    $project: {
+      _id: 1,
+      title: 1,
+      description: 1,
+      priority: 1,
+      status: 1,
+      category: 1,
+      createdAt: 1,
+      citizenId: {
+        _id: '$citizen._id',
+        name: '$citizen.name',
+        email: '$citizen.email'
+      }
+    }
+  }
+];
+
+      const tickets = await Ticket.aggregate(agg);
+      return res.status(200).json({ tickets });
+    }
+
+    const tickets = await Ticket.find(filter).sort(sort).populate('citizenId', 'name email');
     res.status(200).json({ tickets });
   } catch (error) {
     console.error(error);
@@ -73,7 +131,6 @@ export async function addTicketNote(req, res) {
     if (!ticketId)
       return res.status(400).json({ message: "Ticket ID is required" });
 
-    // require authentication
     const updatedBy = req.userData?.id;
     if (!updatedBy) return res.status(401).json({ message: "Unauthorized" });
 
@@ -86,7 +143,6 @@ export async function addTicketNote(req, res) {
       notes: notes || ""
     });
 
-    // if status provided, update ticket.status
     if (status) ticket.status = status;
 
     await ticket.save();
@@ -175,13 +231,16 @@ export async function handleGetCategory(req, res) {
   try {
     
     const { title } = req.body;
+    const categories = await Ticket.distinct('category');
+    console.log(title);
+    
+    
 
     if (!title) {
       return res.status(400).json({ error: "Title query parameter is required" });
     }
 
-    // Send title inside a JSON object
-    const response = await axios.post("http://127.0.0.1:5000/get_category/", { title });
+    const response = await axios.post("http://127.0.0.1:5000/get_category/", { title, categories });
 
     res.json(response.data);
   } catch (error) {
