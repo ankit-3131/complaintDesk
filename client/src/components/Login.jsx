@@ -41,9 +41,9 @@ function Login() {
     try {
       const res = await login_API(form);
       toast.success(res.message || "Login successful!");
-      // store token so API calls can use Authorization header as fallback
       if (res?.token) localStorage.setItem('token', res.token);
-      navigate("/"); // redirect to homepage
+      navigate("/");
+      window.location.reload();
     } catch (err) {
       toast.error(err.response?.data?.message || "Login failed");
     } finally {
