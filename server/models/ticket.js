@@ -32,6 +32,17 @@ const ticketSchema = new mongoose.Schema({
             url: String
         }
     ],
+    location: {
+        type: {
+            type: String,
+            enum: ['Point'],
+            default: 'Point'
+        },
+        coordinates: {
+            type: [Number],
+            default: [0,0]
+        }
+    },
     timeLine: [
         {
             status: { 
@@ -47,6 +58,9 @@ const ticketSchema = new mongoose.Schema({
         }
     ]
 }, { timestamps: true });
+
+// create geospatial index for location
+ticketSchema.index({ location: '2dsphere' });
 
 const ticketModel = mongoose.model('Ticket', ticketSchema)
 export default ticketModel
