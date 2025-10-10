@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import './index.css';
 import LiquidCard from './components/LiquidCard';
 import TicketList from './components/ticketList';
@@ -14,11 +14,21 @@ import TicketView from './components/TicketView';
 import Profile from './components/Profile';
 import { logout_API } from './api/userApi';
 import { useSearchParams } from 'react-router-dom';
+import { getAllCategories } from './api/ticketApi';
 
 function MainApp() {
   const navigate = useNavigate();
   const { user, loading } = useUser();
   const [searchParams, setSearchParams] = useSearchParams();
+  const [categories, setCategories] = useState([]);
+
+  useEffect(()=>{
+    const categoriesFetch = async()=>{
+      const data = await getAllCategories();
+      setCategories(data?.categories || ["None"]);
+    }
+    categoriesFetch();
+  }, [])
 
   const handleFilterChange = (key, value) => {
     const params = Object.fromEntries([...searchParams]);
@@ -52,9 +62,10 @@ function MainApp() {
           </select>
           <select value={searchParams.get('category') || ''} onChange={(e)=>handleFilterChange('category', e.target.value)} className="bg-black/80 text-white px-2 py-1 rounded">
             <option value="">All categories</option>
-            <option value="Road">Road</option>
-            <option value="Water">Water</option>
-            <option value="Electricity">Electricity</option>
+            {
+              categories.map((cat, idx)=><option key={idx} value={cat}>{cat}</option>)
+            }
+            
           </select>
           <select value={searchParams.get('sortBy') || 'createdAt'} onChange={(e)=>handleFilterChange('sortBy', e.target.value)} className="bg-black/80 text-white px-2 py-1 rounded">
             <option value="createdAt">Newest</option>
@@ -91,7 +102,9 @@ function MainApp() {
         </div>
       </div>
       <div className='grid gap-3 p-6 items-start justify-center min-h-screen'>
-        <TicketList />
+        {
+          user ? <TicketList /> : <div className='text-white/80 text-lg'>Please login to view and create tickets.</div>
+        }
       </div>
     </div>
   );

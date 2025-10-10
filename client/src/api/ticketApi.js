@@ -66,3 +66,13 @@ export async function getTicket(ticketId) {
     throw err;
   }
 }
+
+export async function getAllCategories() {
+  try {
+    const response = await axios.get(`${BACKEND_URL}/ticket/getAllCategories`, {
+    withCredentials: true,
+  });
+  return response.data;
+  } catch (error) {
+    console.log("server error in loading categories",error); 
+  }}

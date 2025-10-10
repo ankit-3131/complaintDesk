@@ -275,3 +275,12 @@ export async function getTicketById(req, res) {
     res.status(500).json({ message: 'Internal server error' });
   }
 }
+
+export async function getAllCategories(req,res){
+  try {
+    const categories = await Ticket.distinct('category');
+    res.status(200).json({ categories });
+  } catch (error) {
+    console.log(error);    
+  }
+}
