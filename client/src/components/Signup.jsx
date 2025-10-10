@@ -1,13 +1,14 @@
 import React, { useState } from "react";
 import toast from "react-hot-toast";
-import {signup_API} from "../api/userApi";
-import { Navigate, useNavigate } from "react-router";
+import { signup_API } from "../api/userApi";
+import { useNavigate } from "react-router";
 
-const emailRegex = /^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$/;
-const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d!@#$%^&*]{6,}$/;
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d!@#$%^&*()_+=-]{6,}$/;
+const validStaffIds = ["STAFF123", "STAFF456", "STAFF789"];
 
 function Signup() {
-    const Navigate = useNavigate();
+  const Navigate = useNavigate();
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -18,6 +19,7 @@ function Signup() {
     role: "Citizen",
   });
 
+  const [staffId, setStaffId] = useState(""); // separate from form
   const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
@@ -39,6 +41,18 @@ function Signup() {
       );
       return false;
     }
+
+    if (form.role === "Staff") {
+      if (!staffId.trim()) {
+        toast.error("Staff ID is required for staff signup");
+        return false;
+      }
+      if (!validStaffIds.includes(staffId.trim())) {
+        toast.error("Invalid Staff ID");
+        return false;
+      }
+    }
+
     return true;
   };
 
@@ -48,9 +62,19 @@ function Signup() {
 
     setLoading(true);
     try {
-      const res = await signup_API(form);
-      Navigate('/login')
+      const { name, email, password, locality, phone, profilePicture, role } = form;
+      const res = await signup_API({
+        name,
+        email,
+        password,
+        locality,
+        phone,
+        profilePicture,
+        role,
+      });
+
       toast.success(res.message || "Signup successful!");
+      Navigate("/login");
 
       setForm({
         name: "",
@@ -61,11 +85,11 @@ function Signup() {
         profilePicture: "",
         role: "Citizen",
       });
+      setStaffId("");
     } catch (err) {
       toast.error(err.response?.data?.message || "Signup failed");
     } finally {
       setLoading(false);
-      Navigate("/login");
     }
   };
 
@@ -75,9 +99,7 @@ function Signup() {
         onSubmit={handleSubmit}
         className="flex flex-col gap-6 w-full max-w-md p-8 rounded-2xl bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl"
       >
-        <h2 className="text-white text-2xl font-bold text-center">
-          Sign Up
-        </h2>
+        <h2 className="text-white text-2xl font-bold text-center">Sign Up</h2>
 
         <input
           type="text"
@@ -142,6 +164,16 @@ function Signup() {
           <option value="Citizen">Citizen</option>
           <option value="Staff">Staff</option>
         </select>
+
+        {form.role === "Staff" && (
+          <input
+            type="text"
+            placeholder="Enter Staff ID *"
+            value={staffId}
+            onChange={(e) => setStaffId(e.target.value)}
+            className="px-4 py-2 rounded-lg bg-white/20 text-white placeholder-white/60 border border-white/20 focus:outline-none focus:ring-2 focus:ring-blue-400"
+          />
+        )}
 
         <button
           type="submit"
