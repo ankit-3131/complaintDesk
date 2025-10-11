@@ -21,7 +21,7 @@ export default function ResetPassword(){
   }
 
   return (
-    <div className=" bg-black min-h-screen p-8 flex items-center justify-center">
+    <div className=" bg-black git amin-h-screen p-8 flex items-center justify-center">
       <form onSubmit={handleSubmit} className="glass-form">
         <h2 className="form-title">Reset Password</h2>
         <div className="form-field">

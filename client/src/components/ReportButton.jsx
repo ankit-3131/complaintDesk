@@ -1,13 +1,13 @@
 import React from 'react';
 import axios from 'axios';
-
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
 export default function ReportButton({ defaultYear, defaultMonth }) {
   const handleDownload = async () => {
     try {
       const year = prompt('Enter year (YYYY):', defaultYear || new Date().getFullYear());
       const month = prompt('Enter month (1-12):', defaultMonth || (new Date().getMonth() + 1));
       if (!year || !month) return;
-      const url = `http://localhost:3000/ticket/report/monthly?year=${encodeURIComponent(year)}&month=${encodeURIComponent(month)}`;
+      const url = `${BACKEND_URL}/ticket/report/monthly?year=${encodeURIComponent(year)}&month=${encodeURIComponent(month)}`;
       const resp = await axios.get(url, { responseType: 'blob', withCredentials: true });
       const blob = new Blob([resp.data], { type: 'application/pdf' });
       const link = document.createElement('a');

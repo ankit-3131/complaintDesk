@@ -9,14 +9,14 @@ import L from 'leaflet';
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
 import markerIcon from 'leaflet/dist/images/marker-icon.png';
 import markerShadow from 'leaflet/dist/images/marker-shadow.png';
-
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
 
 function CreateTicket() {
   const [citizenId, setCitizenId] = useState(null);
 
   useEffect(() => {
     axios
-      .get("http://localhost:3000/user/me", { withCredentials: true })
+      .get(`${BACKEND_URL}/user/me`, { withCredentials: true })
       .then((res) => setCitizenId(res.data.id))
       .catch((err) => console.error(err));
   }, []);
@@ -41,7 +41,7 @@ function CreateTicket() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-       const resp = await axios.post("http://localhost:3000/ticket/getCategory",  { title: form.title },
+       const resp = await axios.post(`${BACKEND_URL}/ticket/getCategory`,  { title: form.title },
   { withCredentials: true }
   );
   console.log(resp);

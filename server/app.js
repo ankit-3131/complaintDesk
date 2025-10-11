@@ -90,7 +90,6 @@ setInterval(async () => {
   }
 }, 24 * 60 * 60 * 1000);
 
-// periodic job: send warning email to staff who marked in-progress after 7 days
 setInterval(async () => {
   try {
     const cutoff = new Date(Date.now() - WARNING_DAYS * MS_PER_DAY);
@@ -101,7 +100,7 @@ setInterval(async () => {
         const staff = await User.findById(t.inProgressBy).select('name email');
         if (!staff || !staff.email) continue;
         const subject = `Reminder: Ticket ${t.title} pending for over ${WARNING_DAYS} days`;
-        const text = `Hello ${staff.name || ''},\n\nYou marked ticket "${t.title}" as In Progress on ${t.inProgressSince?.toLocaleString()}. It has been over ${WARNING_DAYS} days with no resolution. Please review the ticket: http://localhost:5173/ticket/${t._id}\n\nThanks.`;
+        const text = `Hello ${staff.name || ''},\n\nYou marked ticket "${t.title}" as In Progress on ${t.inProgressSince?.toLocaleString()}. It has been over ${WARNING_DAYS} days with no resolution. Please review the ticket: ${FRONTEND_URL}/ticket/${t._id}\n\nThanks.`;
         await sendEmail(staff.email, subject, text);
         t.inProgressWarningSent = true;
         await t.save();

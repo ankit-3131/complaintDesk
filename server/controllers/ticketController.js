@@ -1,6 +1,8 @@
 import axios from 'axios';
 import Ticket from '../models/ticket.js'
 
+const fastAPI_URL = process.env.FASTAPI_URL || 'http://127.0.0.1:5000'; 
+
 export async function handleCreateTicket(req,res) {
     try {
   const { title, description, category, priority, citizenId, evidence, location } = req.body;
@@ -300,14 +302,13 @@ export async function handleGetCategory(req, res) {
     const { title } = req.body;
     const categories = await Ticket.distinct('category');
     console.log(title);
-    
-    
+
 
     if (!title) {
       return res.status(400).json({ error: "Title query parameter is required" });
     }
 
-    const response = await axios.post("http://127.0.0.1:5000/get_category/", { title, categories });
+    const response = await axios.post(`${fastAPI_URL}/get_category/`, { title, categories });
 
     res.json(response.data);
   } catch (error) {
