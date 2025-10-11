@@ -27,9 +27,10 @@ function CreateTicket() {
     citizenId: "",
     category: "",
     priority: "Low",
-    evidence: "",
+    evidence: [],
     location: null, // { type: 'Point', coordinates: [lng, lat] }
   });
+  const [localPreviews, setLocalPreviews] = useState([]);
 
   const navigate = useNavigate();
 
@@ -55,11 +56,11 @@ function CreateTicket() {
         citizenId: citizenId,
         category: predictedCategory,
        };
-      if (ticketData.evidence) {
-        ticketData.evidence = [{ url: ticketData.evidence }];
-      } else {
-        delete ticketData.evidence;
-      }
+       if (!ticketData.evidence || ticketData.evidence.length === 0) {
+      delete ticketData.evidence;
+    }
+
+
   const res = await createTicket(ticketData);
       if (res && res.success) {
         toast.success("Ticket created successfully!");
@@ -152,13 +153,54 @@ L.Icon.Default.mergeOptions({
         </div>
 
         <div className="form-field">
+          <label className="text-sm mb-1">Upload evidence (images / any file)</label>
           <input
-            type="text"
-            name="evidence"
-            placeholder="Evidence Image URL"
-            value={form.evidence}
-            onChange={handleChange}
+            type="file"
+            name="evidenceFiles"
+            multiple
+            accept="image/*,video/*,application/pdf"
+            onChange={async (e) => {
+              const files = Array.from(e.target.files || []);
+              if (files.length === 0) return;
+              
+              
+              // show previews immediately
+              const previews = files.map(f => ({ name: f.name, preview: URL.createObjectURL(f) }));
+              setLocalPreviews(previews);
+              
+              
+              try {
+                const sigResp = await axios.get('http://localhost:3000/api/cloudinary-upload');
+                const { timestamp, signature, folder, apiKey, cloudName } = sigResp.data;
+                const uploaded = [];
+                for (const file of files) {
+                  const formData = new FormData();
+                  formData.append('file', file);
+                  formData.append('api_key', apiKey);
+                  formData.append('timestamp', timestamp);
+                  formData.append('signature', signature);
+                  formData.append('folder', folder);
+                  const url = `https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`;
+                  const upResp = await axios.post(url, formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+                  if (upResp?.data?.secure_url) uploaded.push({ url: upResp.data.secure_url });
+                }
+                setForm(f => ({ ...f, evidence: uploaded }));
+              } catch (err) {
+                console.error('upload error', err?.response?.data || err.message || err);
+                toast.error('Error uploading files');
+              }
+            }}
           />
+
+
+          
+          <div className="mt-2 flex gap-2 overflow-x-auto">
+            {localPreviews.map(p => (
+              <div key={p.preview} className="w-20 h-20 bg-black/10 rounded overflow-hidden">
+                <img src={p.preview} alt={p.name} className="w-full h-full object-cover" />
+              </div>
+            ))}
+          </div>
         </div>
 
         <div className="form-field">

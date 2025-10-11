@@ -61,7 +61,7 @@ app.get('/', (req, res) => {
 
 app.use('/user', userRouter);
 app.use('/ticket', ticketRouter);
-// app.use('/api/cloudinary-upload', handleCloudinaryUpload);
+app.use('/api/cloudinary-upload', handleCloudinaryUpload);
 
 import Ticket from './models/ticket.js';
 import { emitToUser } from './services/socketService.js';
