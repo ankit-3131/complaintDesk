@@ -104,6 +104,9 @@ function Login() {
           >
             {loading ? "Logging In..." : "Login"}
           </button>
+          <div className="text-right">
+            <button type="button" onClick={()=>navigate('/forgot-password')} className="text-sm text-white/70 underline">Forgot password?</button>
+          </div>
         </form>
       </div>
     </div>
