@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { addNote, updateTicket as apiUpdateTicket, resolveTicket } from '../api/ticketApi';
+import { addNote, updateTicket as apiUpdateTicket, resolveTicket, confirmResolution } from '../api/ticketApi';
 import toast from 'react-hot-toast';
-
+import { useContext } from 'react';
+import { useUser } from '../contexts/UserContext';
 
 import { useNavigate } from 'react-router-dom';
 
@@ -10,6 +11,8 @@ function LiquidCard({ title, description, description2, imageUrl, onClick, role,
   const [loadingEdit, setLoadingEdit] = useState(false);
   const [loadingNote, setLoadingNote] = useState(false);
   const [loadingResolve, setLoadingResolve] = useState(false);
+  const { user } = useUser();
+  const currentUserId = user?.id;
 
   const handleEdit = async () => {
     setLoadingEdit(true);
@@ -53,6 +56,29 @@ function LiquidCard({ title, description, description2, imageUrl, onClick, role,
     }
   };
 
+  const handleConfirm = async (e) => {
+    e.stopPropagation(); 
+    const note = prompt('Optional note'); 
+    try{ await confirmResolution(ticket._id, { confirm: true, note }); 
+    toast.success('Confirmed'); 
+    if(typeof ticket.onRefresh === 'function') 
+      ticket.onRefresh();
+    }catch(err){ 
+      toast.error('Failed'); 
+    }
+  }
+
+  const handleDenial = async (e) => {
+    e.stopPropagation(); 
+    const note = prompt('Optional note'); 
+    try{ await confirmResolution(ticket._id, { confirm: false, note }); 
+    toast.success('Denied - Ticket reopened'); 
+    if(typeof ticket.onRefresh === 'function') ticket.onRefresh(); 
+  }catch(err){ 
+    toast.error('Failed'); 
+  }
+  }
+
   return (
     <div onClick={() => navigate(`/ticket/${ticket._id}`)} 
       className="flex w-full h-52 ml-3 mr-3 p-6 rounded-xl bg-white/10 backdrop-blur-lg border border-white/20 shadow-lg hover:scale-[1.02] transition-all duration-300 overflow-hidden"
@@ -81,6 +107,13 @@ function LiquidCard({ title, description, description2, imageUrl, onClick, role,
               
               {ticket.status != 'Resolved' && (<button onClick={handleMarkDone} disabled={loadingResolve} className="px-3 py-2 rounded-lg bg-green-600/50 text-white disabled:opacity-60">{loadingResolve ? 'Please wait...' : 'Mark Done'}</button>
               )}
+            </div>
+          )}
+          {role !== 'Staff' && ticket.pendingConfirmation?.pending && ticket.citizenId === currentUserId && (
+            <div className="flex gap-2">
+              <button onClick={async(e)=>{ handleConfirm(e) }} className="px-3 py-2 rounded-lg bg-green-600/50 text-white">Confirm</button>
+
+              <button onClick={async(e)=>{ handleDenial(e) }} className="px-3 py-2 rounded-lg bg-red-600/50 text-white">Deny</button>
             </div>
           )}
         </div>

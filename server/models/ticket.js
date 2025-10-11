@@ -1,3 +1,4 @@
+import { url } from "inspector";
 import mongoose from "mongoose";
 
 const ticketSchema = new mongoose.Schema({
@@ -43,6 +44,17 @@ const ticketSchema = new mongoose.Schema({
             default: [0,0]
         }
     },
+    pendingConfirmation: {
+        pending: { type: Boolean, default: false },
+        requestedAt: Date,
+        requestedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
+    },
+    resolvedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    resolvedAt: Date,
+
+    inProgressSince: Date,
+    inProgressBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    inProgressWarningSent: { type: Boolean, default: false },
     timeLine: [
         {
             status: { 
@@ -59,7 +71,6 @@ const ticketSchema = new mongoose.Schema({
     ]
 }, { timestamps: true });
 
-// create geospatial index for location
 ticketSchema.index({ location: '2dsphere' });
 
 const ticketModel = mongoose.model('Ticket', ticketSchema)

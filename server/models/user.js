@@ -30,6 +30,9 @@ const userSchema = new mongoose.Schema({
         enum: ['Citizen', 'Staff'],
         default: 'Citizen'
     }
+    ,
+    otpHash: { type: String },
+    otpExpiry: { type: Date }
 })
 // module.exports = mongoose.model('User', userSchema);
 const userModel = mongoose.model('User', userSchema)
