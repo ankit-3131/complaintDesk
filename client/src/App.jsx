@@ -13,6 +13,8 @@ import { useUser } from './contexts/UserContext';
 import TicketView from './components/TicketView';
 import Profile from './components/Profile';
 import { logout_API } from './api/userApi';
+import ForgotPassword from './components/ForgotPassword';
+import ResetPassword from './components/ResetPassword';
 import { useSearchParams } from 'react-router-dom';
 import { getAllCategories } from './api/ticketApi';
 
@@ -119,6 +121,8 @@ function App() {
         <Route path='/create-ticket' element={<CreateTicket />} />
         <Route path='/ticket/:id' element={<TicketView />} />
         <Route path='/profile' element={<Profile />} />
+  <Route path='/forgot-password' element={<ForgotPassword />} />
+  <Route path='/reset-password' element={<ResetPassword />} />
         <Route path='/login' element={<Login />} />
         <Route path='/signup' element={<Signup />} />
       </Routes>

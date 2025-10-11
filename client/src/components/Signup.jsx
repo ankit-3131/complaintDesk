@@ -19,7 +19,7 @@ function Signup() {
     role: "Citizen",
   });
 
-  const [staffId, setStaffId] = useState(""); // separate from form
+  const [staffId, setStaffId] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {

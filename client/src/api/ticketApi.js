@@ -67,6 +67,16 @@ export async function getTicket(ticketId) {
   }
 }
 
+export async function confirmResolution(ticketId, body) {
+  try {
+    const res = await axios.post(`${BACKEND_URL}/ticket/ticket/${ticketId}/confirm`, body, { withCredentials: true });
+    return res.data;
+  } catch (err) {
+    console.log('confirmResolution error', err);
+    throw err;
+  }
+}
+
 export async function getAllCategories() {
   try {
     const response = await axios.get(`${BACKEND_URL}/ticket/getAllCategories`, {

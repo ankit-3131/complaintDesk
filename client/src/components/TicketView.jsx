@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getTicket, addNote, updateTicket, resolveTicket } from '../api/ticketApi';
+import { getTicket, addNote, updateTicket, resolveTicket, confirmResolution } from '../api/ticketApi';
 import { useUser } from '../contexts/UserContext';
 import toast from 'react-hot-toast';
 
@@ -64,6 +64,24 @@ function TicketView() {
         <div className="mt-6">
           <h3 className="font-bold mb-2">Timeline</h3>
           <div className="flex flex-col gap-3">
+            {/* Confirmation ui for creator if its conf by staff only */}
+            {ticket.pendingConfirmation?.pending && user?.id && ticket.citizenId && (ticket.citizenId._id?.toString?.() === user.id?.toString?.() || ticket.citizenId === user.id) && (
+              <div className="mt-6 p-4 bg-yellow-900/20 border border-yellow-600 rounded">
+                <div className="font-bold">Confirm resolution</div>
+                <div className="text-sm text-white/80 mt-2">A staff member has marked this ticket as resolved. Please confirm if the issue is actually resolved. You can add an optional note.</div>
+                <div className="mt-3 flex gap-2">
+                  <input id="confirmNote" placeholder="Optional note" className="flex-1 px-3 py-2 rounded bg-white/5 text-white" />
+                  <button onClick={async()=>{
+                    const note = document.getElementById('confirmNote').value;
+                    try{ await confirmResolution(id, { confirm: true, note }); toast.success('Thank you for confirming'); const res = await getTicket(id); setTicket(res.ticket);}catch(e){ toast.error('Failed to confirm'); }
+                  }} className="px-4 py-2 rounded bg-green-600">Yes, Confirm</button>
+                  <button onClick={async()=>{
+                    const note = document.getElementById('confirmNote').value;
+                    try{ await confirmResolution(id, { confirm: false, note }); toast.success('Marked as not resolved, ticket reopened'); const res = await getTicket(id); setTicket(res.ticket);}catch(e){ toast.error('Failed to submit response'); }
+                  }} className="px-4 py-2 rounded bg-red-600">No, Not resolved</button>
+                </div>
+              </div>
+            )}
             {ticket.timeLine && ticket.timeLine.length > 0 ? (
               ticket.timeLine.slice().reverse().map((tl, idx) => (
                 <div key={idx} className="p-3 rounded-lg bg-white/3 border border-white/10">

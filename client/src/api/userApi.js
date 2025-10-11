@@ -70,3 +70,35 @@ export async function getUserProfile(id) {
     throw error;
   }
 }
+
+export async function forgotPassword(email) {
+  try {
+    const res = await axios.post(`${BACKEND_URL}/user/forgot`, { email });
+    return res.data;
+  } catch (err) {
+    console.log('forgotPassword error', err?.response?.data || err.message);
+    throw err;
+  }
+}
+
+export async function resetPassword(payload) {
+  try {
+    const res = await axios.post(`${BACKEND_URL}/user/reset`, payload);
+    return res.data;
+  } catch (err) {
+    console.log('resetPassword error', err?.response?.data || err.message);
+    throw err;
+  }
+}
+
+export async function changePassword(payload) {
+  try {
+    const token = localStorage.getItem('token');
+    const headers = token ? { Authorization: `Bearer ${token}` } : {};
+    const res = await axios.post(`${BACKEND_URL}/user/change-password`, payload, { withCredentials: true, headers });
+    return res.data;
+  } catch (err) {
+    console.log('changePassword error', err?.response?.data || err.message);
+    throw err;
+  }
+}

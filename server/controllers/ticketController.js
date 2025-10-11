@@ -174,6 +174,19 @@ export async function updateTicket(req, res) {
       if (updates[k] !== undefined) ticket[k] = updates[k];
     });
 
+    if (updates.status !== undefined) {
+      if (updates.status === 'In Progress') {
+        ticket.inProgressSince = new Date();
+        ticket.inProgressBy = req.userData?.id;
+        ticket.inProgressWarningSent = false;
+        ticket.timeLine.push({ status: 'In Progress', updatedBy: req.userData?.id, notes: 'Marked In Progress by staff' });
+      } else {
+        ticket.inProgressSince = undefined;
+        ticket.inProgressBy = undefined;
+        ticket.inProgressWarningSent = false;
+      }
+    }
+
     await ticket.save();
     res.status(200).json({ message: 'Ticket updated', ticket });
   } catch (error) {
@@ -193,13 +206,65 @@ export async function markTicketResolved(req, res) {
     const ticket = await Ticket.findById(ticketId);
     if (!ticket) return res.status(404).json({ message: 'Ticket not found' });
 
-    ticket.status = 'Resolved';
-    ticket.timeLine.push({ status: 'Resolved', updatedBy: req.userData.id, notes: 'Marked resolved by staff' });
+    ticket.pendingConfirmation = {
+      pending: true,
+      requestedAt: new Date(),
+      requestedBy: req.userData.id
+    };
+    ticket.timeLine.push({ status: ticket.status, updatedBy: req.userData.id, notes: 'Staff requested resolution confirmation' });
     await ticket.save();
 
-    res.status(200).json({ message: 'Ticket marked resolved', ticket });
+    try {
+      const { emitToUser } = await import('../services/socketService.js');
+      const creatorId = ticket.citizenId?.toString();
+      emitToUser(creatorId, 'resolutionRequested', { ticketId: ticket._id, title: ticket.title });
+    } catch (e) {
+      console.error('socket notify error', e.message || e);
+    }
+
+    res.status(200).json({ message: 'Resolution confirmation requested', ticket });
   } catch (error) {
     console.error(error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+}
+
+export async function confirmResolution(req, res) {
+  try {
+    const ticketId = req.params.id;
+    const { confirm, note } = req.body;
+    if (!ticketId) return res.status(400).json({ message: 'Ticket ID is required' });
+
+    const ticket = await Ticket.findById(ticketId);
+    if (!ticket) return res.status(404).json({ message: 'Ticket not found' });
+
+    const userId = req.userData?.id;
+    if (!userId) return res.status(401).json({ message: 'Unauthorized' });
+    if (ticket.citizenId && ticket.citizenId.toString() !== userId && req.userData?.role !== 'Staff') {
+      return res.status(403).json({ message: 'Forbidden' });
+    }
+
+    if (!ticket.pendingConfirmation || !ticket.pendingConfirmation.pending) {
+      return res.status(400).json({ message: 'No pending confirmation' });
+    }
+
+    if (confirm) {
+      ticket.status = 'Resolved';
+      ticket.resolvedBy = ticket.pendingConfirmation.requestedBy;
+      ticket.resolvedAt = new Date();
+      ticket.pendingConfirmation = { pending: false };
+      ticket.timeLine.push({ status: 'Resolved', updatedBy: userId, notes: note || 'Creator confirmed resolution' });
+      await ticket.save();
+      return res.status(200).json({ message: 'Ticket resolved', ticket });
+    } else {
+      ticket.status = 'Open';
+      ticket.pendingConfirmation = { pending: false };
+      ticket.timeLine.push({ status: 'Open', updatedBy: userId, notes: note || 'Creator denied resolution' });
+      await ticket.save();
+      return res.status(200).json({ message: 'Ticket reopened', ticket });
+    }
+  } catch (err) {
+    console.error(err);
     res.status(500).json({ message: 'Internal server error' });
   }
 }
