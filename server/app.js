@@ -22,6 +22,7 @@ const FRONTEND_URL =
 app.use(express.json());
 app.use(cookieParser())
 const allowedOrigins = [
+  "https://complaint-desk-client.vercel.app",
   "http://localhost:5173",
   "https://complaint-desk-sage.vercel.app"
 ];
