@@ -16,7 +16,8 @@ import cookieParser from 'cookie-parser';
 connectDB();
 
 app.use(express.json());
-app.use(cookieParser())
+app.use(cookieParser());
+
 const allowedOrigins = [
   "http://localhost:5173",
   "https://complaint-desk-client.vercel.app",
