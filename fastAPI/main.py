@@ -1,9 +1,13 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
-from sentence_transformers import SentenceTransformer, util
 from fastapi.middleware.cors import CORSMiddleware
 from typing import Optional, List
 import re
+from google import genai
+import numpy as np
+from dotenv import load_dotenv
+
+load_dotenv()
 
 app = FastAPI(title="Complaint Categorization Engine")
 
@@ -14,9 +18,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Load high-performance sentence transformer embedding model
-EMBEDDING_MODEL_NAME = "all-MiniLM-L6-v2"
-embed_model = SentenceTransformer(EMBEDDING_MODEL_NAME)
+# Initialize google-genai client
+client = genai.Client()
+EMBEDDING_MODEL_NAME = "gemini-embedding-2"
 
 CATEGORIES_DEFINITIONS = {
     "Broken Physical Infrastructure": [
@@ -67,11 +71,19 @@ CATEGORIES_DEFINITIONS = {
 CATEGORY_NAMES = list(CATEGORIES_DEFINITIONS.keys())
 CATEGORY_ANCHORS = {}
 
+def get_embedding(text_list):
+    response = client.models.embed_content(model=EMBEDDING_MODEL_NAME, contents=text_list)
+    # google-genai returns a list of EmbedContentResponse objects for multiple inputs
+    return np.array([e.values for e in response.embeddings])
+
+print("Pre-computing category embeddings...")
 for cat_name, anchor_texts in CATEGORIES_DEFINITIONS.items():
-    CATEGORY_ANCHORS[cat_name] = embed_model.encode(anchor_texts, convert_to_tensor=True)
+    # Store as a 2D numpy array: (num_anchors, embedding_dim)
+    CATEGORY_ANCHORS[cat_name] = get_embedding(anchor_texts)
+print("Finished pre-computing category embeddings.")
 
 # Similarity threshold to confirm alignment with a category
-ALIGNMENT_THRESHOLD = 0.38
+ALIGNMENT_THRESHOLD = 0.50  # Adjusted threshold since Gemini embeddings typically have higher baseline cosine similarity
 
 
 class ComplaintRequest(BaseModel):
@@ -100,7 +112,8 @@ def get_category(data: ComplaintRequest):
         query_text = raw_title or raw_description
 
     # Encode complaint into embedding tensor
-    query_embedding = embed_model.encode(query_text, convert_to_tensor=True)
+    query_response = client.models.embed_content(model=EMBEDDING_MODEL_NAME, contents=query_text)
+    query_embedding = np.array(query_response.embeddings[0].values)
 
     best_category = "other"
     best_score = -1.0
@@ -108,7 +121,14 @@ def get_category(data: ComplaintRequest):
     # Multi-anchor cosine similarity search across all 5 pre-defined categories
     for cat_name in CATEGORY_NAMES:
         anchor_embeddings = CATEGORY_ANCHORS[cat_name]
-        similarities = util.cos_sim(query_embedding, anchor_embeddings)[0]
+        
+        # Calculate cosine similarities against all anchors in the category
+        # Since embeddings are normalized by default in Gemini, we can just use dot product,
+        # but to be safe we'll do full cosine similarity:
+        norm_query = np.linalg.norm(query_embedding)
+        norm_anchors = np.linalg.norm(anchor_embeddings, axis=1)
+        similarities = np.dot(anchor_embeddings, query_embedding) / (norm_anchors * norm_query)
+        
         max_similarity = similarities.max().item()
 
         if max_similarity > best_score:
@@ -128,7 +148,7 @@ def get_category(data: ComplaintRequest):
 def home():
     return {
         "status": "online",
-        "engine": "SentenceTransformer (all-MiniLM-L6-v2)",
+        "engine": "google-genai",
         "categories": CATEGORY_NAMES,
         "threshold": ALIGNMENT_THRESHOLD
     }
