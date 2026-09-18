@@ -20,8 +20,9 @@ app.use(cookieParser())
 const allowedOrigins = [
   "http://localhost:5173",
   "https://complaint-desk-client.vercel.app",
-  "https://complaint-desk-sage.vercel.app"
-];
+  "https://complaint-desk-sage.vercel.app",
+  process.env.FRONTEND_URL
+].filter(Boolean);
 
 app.use(cors({
   origin: (origin, callback) => {
