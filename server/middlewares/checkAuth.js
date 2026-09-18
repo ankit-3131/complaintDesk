@@ -1,8 +1,8 @@
 import jwt from 'jsonwebtoken'
 
-const secret = process.env.JWT_SECRET
 export default async function checkAuth(req,res,next){
     try {
+        const secret = process.env.JWT_SECRET
         // accept token from Authorization header (Bearer) or cookie
         let token = null;
         const authHeader = req.headers?.authorization;

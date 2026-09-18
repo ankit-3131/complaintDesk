@@ -1,9 +1,10 @@
+import 'dotenv/config';
 import express from 'express';
 import { createServer } from 'http';
 import cors from 'cors';
 import { Server } from 'socket.io';
 import { setIO, registerUserSocket, unregisterUserSocket } from './services/socketService.js';
-const PORT = process.env.PORT;
+const PORT = 3000;
 const app = express();
 const server = createServer(app);
 import userRouter from './routes/userRouter.js';
@@ -14,15 +15,9 @@ import cookieParser from 'cookie-parser';
 // Connect to MongoDB
 connectDB();
 
-
-const FRONTEND_URL =
-    process.env.FRONTEND_URL ||
-    "http://localhost:5173";
-
 app.use(express.json());
 app.use(cookieParser())
 const allowedOrigins = [
-  "https://complaint-desk-client.vercel.app",
   "http://localhost:5173",
   "https://complaint-desk-sage.vercel.app"
 ];
@@ -62,16 +57,8 @@ io.on("connection", (socket) => {
   });
 });
 app.get('/', (req, res) => {
-    res.send('ComplaintDesk backend APIs are running..!');
+    res.send('server is running');
 })
-
-app.get('/health', (req, res) => {
-    res.status(200).json({
-        status: "ok",
-        uptime: process.uptime(),
-        timestamp: new Date()
-    });
-});
 
 app.use('/user', userRouter);
 app.use('/ticket', ticketRouter);

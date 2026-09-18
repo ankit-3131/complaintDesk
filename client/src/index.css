@@ -7,3 +7,12 @@ hr{
   width: 20%;
   color: rgb(172, 172, 172);
 }
+
+/* Dark mode styling for Leaflet tiles */
+.dark-leaflet-map .leaflet-tile {
+  filter: brightness(0.6) invert(1) contrast(2.5) hue-rotate(200deg) saturate(0.25) brightness(0.75);
+}
+
+.dark-leaflet-map .leaflet-container {
+  background: #0b0f17 !important;
+}
