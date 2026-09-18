@@ -298,22 +298,46 @@ export async function handleDeleteTicket(req,res) {
 
 export async function handleGetCategory(req, res) {
   try {
-    
-    const { title } = req.body;
-    const categories = await Ticket.distinct('category');
-    console.log(title);
+    const { title, description } = req.body;
 
-
-    if (!title) {
-      return res.status(400).json({ error: "Title query parameter is required" });
+    if (!title && !description) {
+      return res.status(400).json({ error: "Title or description is required" });
     }
 
-    const response = await axios.post(`${fastAPI_URL}/get_category/`, { title, categories });
+    const apiUrl = (process.env.FASTAPI_URL || 'http://127.0.0.1:8000').replace(/\/+$/, '');
 
-    res.json(response.data);
+    try {
+      const response = await axios.post(
+        `${apiUrl}/get_category/`,
+        { title: title || "", description: description || "" },
+        { timeout: 4000 }
+      );
+      if (response?.data?.predicted_category) {
+        return res.json(response.data);
+      }
+    } catch (apiErr) {
+      console.warn("FastAPI prediction error or timeout:", apiErr.message);
+    }
+
+    // Fallback: heuristic classification so complaint submission never hangs if microservice is offline
+    const combined = `${title || ""} ${description || ""}`.toLowerCase();
+    let predicted = "other";
+    if (/pothole|road|bridge|street|pavement|manhole|sidewalk|streetlight|collapsed|cracked|concrete/i.test(combined)) {
+      predicted = "Broken Physical Infrastructure";
+    } else if (/garbage|trash|smell|dead animal|dirty|sewer|drain|mosquito|waste|overflow/i.test(combined)) {
+      predicted = "Sanitation & Biological Hazards";
+    } else if (/outage|power|electricity|voltage|low pressure|no water|blackout|meter|water supply/i.test(combined)) {
+      predicted = "Utility Outages (Power & Water)";
+    } else if (/noise|loud music|illegal parking|encroachment|trespassing|nuisance|blocked path/i.test(combined)) {
+      predicted = "Public Nuisance & Rule Violations";
+    } else if (/certificate|tax|portal|website down|license|bribe|application|refund|delayed/i.test(combined)) {
+      predicted = "Document & Administrative Failures";
+    }
+
+    res.json({ predicted_category: predicted });
   } catch (error) {
-    console.error("Error fetching from Python API:", error.message);
-    res.status(500).json({ error: "Failed to connect to Python API" });
+    console.error("Error in handleGetCategory:", error.message);
+    res.json({ predicted_category: "other" });
   }
 }
 

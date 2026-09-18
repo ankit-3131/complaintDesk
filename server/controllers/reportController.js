@@ -1,12 +1,12 @@
 import PDFDocument from 'pdfkit';
 import Ticket from '../models/ticket.js';
-import User from '../models/user.js';
 
 function msToDuration(ms) {
-  if (!ms) return '-';
+  if (!ms || ms < 0) return '-';
   const totalMins = Math.round(ms / (60 * 1000));
   const hours = Math.floor(totalMins / 60);
   const mins = totalMins % 60;
+  if (hours === 0) return `${mins}m`;
   return `${hours}h ${mins}m`;
 }
 
@@ -15,88 +15,141 @@ export async function monthlyReport(req, res) {
     const year = parseInt(req.query.year, 10) || new Date().getFullYear();
     const month = parseInt(req.query.month, 10);
     if (!month || month < 1 || month > 12) {
-      return res.status(400).json({ message: 'Provide query params ?year=YYYY&month=MM' });
+      return res.status(400).json({ message: 'Provide valid query params ?year=YYYY&month=MM (month 1-12)' });
     }
 
     const start = new Date(Date.UTC(year, month - 1, 1, 0, 0, 0));
     const end = new Date(Date.UTC(year, month, 1, 0, 0, 0));
 
-    // find tickets created in that month (or updated/resolved in that month?)
-    // we'll consider tickets whose createdAt is within the month
-    const tickets = await Ticket.find({ createdAt: { $gte: start, $lt: end } }).populate('resolvedBy', 'name email');
+    // Find tickets created within that month
+    const tickets = await Ticket.find({ createdAt: { $gte: start, $lt: end } })
+      .populate('citizenId', 'name email')
+      .populate('inProgressBy', 'name email')
+      .sort({ createdAt: -1 });
 
     const total = tickets.length;
     const totalResolved = tickets.filter(t => t.status === 'Resolved').length;
-    const totalOpen = tickets.filter(t => t.status !== 'Resolved').length;
+    const totalInProgress = tickets.filter(t => t.status === 'In Progress').length;
+    const totalOpen = tickets.filter(t => t.status === 'Open').length;
 
-    // compute resolve times for resolved tickets
+    // Compute average resolve times for resolved tickets
     const resolvedTimes = tickets
       .filter(t => t.status === 'Resolved' && t.resolvedAt && t.createdAt)
-      .map(t => t.resolvedAt.getTime() - t.createdAt.getTime());
+      .map(t => new Date(t.resolvedAt).getTime() - new Date(t.createdAt).getTime());
 
-    const avgResolveMs = resolvedTimes.length ? Math.round(resolvedTimes.reduce((a,b)=>a+b,0)/resolvedTimes.length) : 0;
+    const avgResolveMs = resolvedTimes.length
+      ? Math.round(resolvedTimes.reduce((a, b) => a + b, 0) / resolvedTimes.length)
+      : 0;
 
-    // Prepare the PDF
-    const doc = new PDFDocument({ size: 'A4', margin: 50 });
-    const filename = `monthly-report-${year}-${String(month).padStart(2,'0')}.pdf`;
-    res.setHeader('Content-disposition', `attachment; filename="${filename}"`);
-    res.setHeader('Content-type', 'application/pdf');
+    const monthNames = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+    const monthName = monthNames[month - 1];
 
-    const origAddPage = doc.addPage.bind(doc);
-    doc.addPage = (...args) => {
-      origAddPage(...args);
-    };
+    // Initialize PDF with bufferPages enabled for clean page numbering
+    const doc = new PDFDocument({ size: 'A4', margin: 50, bufferPages: true });
+    const filename = `monthly-report-${year}-${String(month).padStart(2, '0')}.pdf`;
 
-    doc.on('pageAdded', () => {
-      const bottom = doc.page.height - 40;
-      doc.fontSize(8).fillColor('gray').text(`Generated: ${new Date().toISOString()}`, 50, bottom, { align: 'left' });
-      doc.fontSize(8).fillColor('gray').text(`Page ${doc.page.number}`, 0, bottom, { align: 'center' });
-    });
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.setHeader('Content-Type', 'application/pdf');
 
     doc.pipe(res);
 
-    doc.fontSize(20).text(`Monthly Ticket Report`, { align: 'center' });
+    // --- Header Section ---
+    doc.fillColor('#0f172a').fontSize(22).font('Helvetica-Bold').text('ComplaintDesk', { align: 'left' });
+    doc.fillColor('#64748b').fontSize(10).font('Helvetica').text('CIVIC OPERATIONS & GRIEVANCE REPORT', { align: 'left' });
     doc.moveDown(0.5);
-    doc.fontSize(12).text(`Month: ${year}-${String(month).padStart(2,'0')}`);
-    doc.text(`Generated: ${new Date().toISOString()}`);
-    doc.moveDown();
 
-    doc.fontSize(14).text('Summary', { underline: true });
-    doc.moveDown(0.3);
-    doc.fontSize(12).list([
-      `Total tickets created: ${total}`,
-      `Total resolved: ${totalResolved}`,
-      `Total open / in progress: ${totalOpen}`,
-      `Average resolve time: ${avgResolveMs ? msToDuration(avgResolveMs) : '-'} `
-    ]);
+    doc.strokeColor('#e2e8f0').lineWidth(1).moveTo(50, doc.y).lineTo(545, doc.y).stroke();
+    doc.moveDown(0.8);
 
-    doc.moveDown();
-  doc.fontSize(14).text('Tickets', { underline: true });
-    doc.moveDown(0.3);
+    // Subheader info
+    doc.fillColor('#1e293b').fontSize(14).font('Helvetica-Bold').text(`Monthly Summary: ${monthName} ${year}`);
+    doc.fillColor('#64748b').fontSize(9).font('Helvetica').text(`Generated on: ${new Date().toUTCString()}`);
+    doc.moveDown(1);
 
-    // Table-like list
-    tickets.forEach((t, idx) => {
-      doc.fontSize(12).fillColor('black').text(`${idx+1}. ${t.title}`);
-      const meta = [];
-      meta.push(`Status: ${t.status}`);
-      if (t.status === 'Resolved' && t.resolvedAt) {
-        meta.push(`Resolved At: ${t.resolvedAt.toISOString()}`);
-        meta.push(`Resolve Time: ${msToDuration(t.resolvedAt.getTime() - t.createdAt.getTime())}`);
-      }
-      doc.fontSize(10).fillColor('gray').text('   ' + meta.join(' • '));
-      doc.moveDown(0.2);
-      // add page break if approaching bottom
-      if (doc.y > doc.page.height - 120) doc.addPage();
+    // --- KPI Metric Cards (Grid) ---
+    const statsTop = doc.y;
+    const colWidth = 115;
+    const cardHeight = 55;
+
+    const metrics = [
+      { label: 'Total Tickets', val: String(total), color: '#3b82f6' },
+      { label: 'Resolved', val: String(totalResolved), color: '#10b981' },
+      { label: 'In Progress', val: String(totalInProgress), color: '#f59e0b' },
+      { label: 'Open Issues', val: String(totalOpen), color: '#ef4444' }
+    ];
+
+    metrics.forEach((m, idx) => {
+      const x = 50 + idx * (colWidth + 10);
+      doc.rect(x, statsTop, colWidth, cardHeight).fillAndStroke('#f8fafc', '#e2e8f0');
+      doc.fillColor(m.color).fontSize(18).font('Helvetica-Bold').text(m.val, x + 10, statsTop + 10);
+      doc.fillColor('#64748b').fontSize(9).font('Helvetica').text(m.label, x + 10, statsTop + 34);
     });
 
-    // Final footer on last page
-    const bottom = doc.page.height - 40;
-    doc.fontSize(8).fillColor('gray').text(`Report generated by ComplaintDesk — ${new Date().toLocaleString()}`, 50, bottom, { align: 'left' });
+    doc.y = statsTop + cardHeight + 20;
+
+    // Additional metric: avg resolve time
+    doc.fillColor('#334155').fontSize(10).font('Helvetica-Bold').text('Performance Metric:');
+    doc.fillColor('#475569').fontSize(10).font('Helvetica').text(
+      `  • Average Resolution Time: ${avgResolveMs ? msToDuration(avgResolveMs) : 'N/A'}`
+    );
+    doc.moveDown(1.2);
+
+    // --- Tickets Section Header ---
+    doc.fillColor('#0f172a').fontSize(13).font('Helvetica-Bold').text('Incident Details');
+    doc.moveDown(0.4);
+    doc.strokeColor('#cbd5e1').lineWidth(0.5).moveTo(50, doc.y).lineTo(545, doc.y).stroke();
+    doc.moveDown(0.6);
+
+    if (tickets.length === 0) {
+      doc.fillColor('#94a3b8').fontSize(11).font('Helvetica-Oblique').text('No tickets were submitted during this period.', { align: 'center' });
+    } else {
+      tickets.forEach((t, idx) => {
+        // Check if approaching page bottom
+        if (doc.y > doc.page.height - 100) {
+          doc.addPage();
+        }
+
+        const citizenName = t.citizenId?.name || 'Anonymous';
+        const formattedDate = new Date(t.createdAt).toLocaleDateString();
+
+        // Ticket Title & Number
+        doc.fillColor('#0f172a').fontSize(11).font('Helvetica-Bold').text(`${idx + 1}. ${t.title}`);
+        
+        // Metadata Line
+        const metaText = `Category: ${t.category || 'General'}  |  Priority: ${t.priority || 'Low'}  |  Status: ${t.status}  |  Submitted: ${formattedDate} by ${citizenName}`;
+        doc.fillColor('#64748b').fontSize(8.5).font('Helvetica').text(`    ${metaText}`);
+        
+        if (t.description) {
+          const cleanDesc = t.description.length > 120 ? t.description.slice(0, 120) + '...' : t.description;
+          doc.fillColor('#475569').fontSize(8.5).font('Helvetica-Oblique').text(`    Note: "${cleanDesc}"`);
+        }
+
+        doc.moveDown(0.5);
+      });
+    }
+
+    // --- Safe Page Numbering (Buffered) ---
+    const range = doc.bufferedPageRange();
+    for (let i = range.start; i < range.start + range.count; i++) {
+      doc.switchToPage(i);
+      const bottom = doc.page.height - 35;
+      doc.strokeColor('#e2e8f0').lineWidth(0.5).moveTo(50, bottom - 10).lineTo(545, bottom - 10).stroke();
+      doc.fillColor('#94a3b8').fontSize(8).font('Helvetica').text(
+        `ComplaintDesk Civic Operations Report • Page ${i + 1} of ${range.count}`,
+        50,
+        bottom,
+        { align: 'center', width: 495 }
+      );
+    }
 
     doc.end();
-
   } catch (err) {
     console.error('monthlyReport error', err);
-    res.status(500).json({ message: 'Server error' });
+    if (!res.headersSent) {
+      res.status(500).json({ message: 'Server error generating report' });
+    }
   }
 }

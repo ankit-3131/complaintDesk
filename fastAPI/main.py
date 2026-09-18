@@ -1,37 +1,11 @@
-from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from pydantic import BaseModel
 from sentence_transformers import SentenceTransformer, util
-import numpy as np
-import re
-import spacy
-from spacy.lang.en.stop_words import STOP_WORDS
 from fastapi.middleware.cors import CORSMiddleware
+from typing import Optional, List
+import re
 
-nlp = None
-embed_model = None
-EMBEDDING_MODEL_NAME = "all-MiniLM-L6-v2"
-
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    global nlp, embed_model
-
-    try:
-        import en_core_web_sm
-        nlp = en_core_web_sm.load()
-    except Exception:
-        import spacy.cli
-        spacy.cli.download("en_core_web_sm")
-        nlp = spacy.load("en_core_web_sm")
-
-    embed_model = SentenceTransformer(EMBEDDING_MODEL_NAME)
-
-    yield
-
-    nlp = None
-    embed_model = None
-
-app = FastAPI(lifespan=lifespan)
+app = FastAPI(title="Complaint Categorization Engine")
 
 app.add_middleware(
     CORSMiddleware,
@@ -40,79 +14,121 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Load high-performance sentence transformer embedding model
+EMBEDDING_MODEL_NAME = "all-MiniLM-L6-v2"
+embed_model = SentenceTransformer(EMBEDDING_MODEL_NAME)
+
+CATEGORIES_DEFINITIONS = {
+    "Broken Physical Infrastructure": [
+        "Broken Physical Infrastructure. Tangible, stationary objects built by the city that have sustained physical damage and require manual repair. Concrete, asphalt, metal, and structural damage.",
+        "Broken, pothole, collapsed, damaged, cracked, missing cover, streetlights, bridge, pavement, park bench, road crater, broken sidewalk, guardrail, damaged divider, broken traffic light.",
+        "Deep pothole on Main Street. Pothole in the road causing vehicle damage.",
+        "Broken streetlight pole leaning over. Damaged street light not working at night.",
+        "Missing manhole cover on street. Broken pavement or sidewalk cracked.",
+        "Damaged road divider and broken guardrail on highway. Collapsed pedestrian bridge."
+    ],
+    "Sanitation & Biological Hazards": [
+        "Sanitation & Biological Hazards. Waste, dirt, animals, and anything requiring cleaning, removal, or pest control to maintain public hygiene. Cleanliness, garbage, and nature.",
+        "Garbage, trash, smell, dead animal, overflowing, dirty, sweep, sewer backup, mosquitoes, stray dogs, rotten waste, stagnant water, filthy drain, open defecation, clogged gutter.",
+        "Trash not collected for 3 days. Overflowing garbage bins on the road.",
+        "Dead raccoon or dog on the sidewalk. Dead animal rotting in the open.",
+        "Foul smell from open drain. Sewer backup overflowing onto street.",
+        "Public toilet filthy and clogged. Mosquito breeding in stagnant gutter water."
+    ],
+    "Utility Outages (Power & Water)": [
+        "Utility Outages (Power & Water). The disruption of essential resources flowing into a citizen's home or neighborhood. Flow and supply of power, electricity, drinking water, and gas.",
+        "Outage, cut, no power, voltage, low pressure, no water, disconnected, supply, meter, bill, electricity failure, blackout, transformer spark, burst water pipeline, dirty tap water.",
+        "Electricity gone since morning. Power outage in our residential neighborhood.",
+        "Very low water pressure in taps. No water supply for multiple hours.",
+        "Wrong meter reading on water bill. Excessive electricity charges.",
+        "Electric transformer sparked and power failed. Burst water pipe flooding street."
+    ],
+    "Public Nuisance & Rule Violations": [
+        "Public Nuisance & Rule Violations. Bad behavior by other humans or businesses that violates civic laws, disrupts peace, or creates unauthorized changes. Human illegal, disruptive, or annoying actions.",
+        "Public fighting, brawl, violence, physical altercation, clash between groups, rowdy behavior, hooliganism, harassment, creating ruckus, disturbing public peace.",
+        "Noise, loud music, illegal parking, unauthorized, encroachment, blocked path, fighting, trespassing, illegal construction, street obstruction, nuisance, illegal vendors.",
+        "Shop extending onto the walking path. Commercial encroachment on public pavement.",
+        "Neighbors playing loud music at 2 AM. Severe noise disturbance.",
+        "Abandoned car blocking driveway. Illegal vehicle parking obstructing traffic.",
+        "Group of people fighting on the street. Public brawl and altercation outside mall.",
+        "Rowdy crowd causing public nuisance and harassment. People shouting and fighting in public area."
+    ],
+    "Document & Administrative Failures": [
+        "Document & Administrative Failures. Bureaucracy, paperwork, digital portals, taxes, and interactions with city staff. Paper, data, and money.",
+        "Certificate, delayed, tax, portal, website down, rejected, application, license, bribe, unhelpful staff, refund, payment gateway failed, revenue officer corrupt, registration pending.",
+        "Birth certificate application stuck for a month. Death certificate pending approval.",
+        "Property tax payment gateway failed. Municipal website portal down.",
+        "Municipal clerk asking for bribe. Unhelpful administrative staff refusing service.",
+        "Trade license or caste certificate application rejected without explanation."
+    ]
+}
+
+# Pre-compute and cache category anchor tensors at startup
+CATEGORY_NAMES = list(CATEGORIES_DEFINITIONS.keys())
+CATEGORY_ANCHORS = {}
+
+for cat_name, anchor_texts in CATEGORIES_DEFINITIONS.items():
+    CATEGORY_ANCHORS[cat_name] = embed_model.encode(anchor_texts, convert_to_tensor=True)
+
+# Similarity threshold to confirm alignment with a category
+ALIGNMENT_THRESHOLD = 0.38
+
+
 class ComplaintRequest(BaseModel):
     title: str
-    categories: list[str] = []
+    description: Optional[str] = ""
+    categories: Optional[List[str]] = []
+
 
 class ComplaintResponse(BaseModel):
     predicted_category: str
+    confidence_score: Optional[float] = None
 
-def clean_and_generate_category_name(title: str) -> str:
-    words = re.findall(r"[a-zA-Z]+", title.lower())
-    key_words = "".join(words[:3]) if len(words) >= 3 else "".join(words)
-    return key_words or "general_issue"
-
-custom_fillers = {
-    "uh", "um", "er", "ah", "oh", "hmm", "huh", "hmmm",
-    "like", "you know", "i mean", "sorta", "kinda", "sort of", "kind of",
-    "basically", "actually", "literally", "seriously", "really", "honestly",
-    "please", "kindly", "help", "assist", "request", "plz", "pls", "can", "could",
-    "would", "will", "may", "sir", "madam", "team", "dear", "respected",
-    "well", "so", "anyway", "ok", "okay", "alright", "hey", "hi", "hello",
-    "look", "listen", "by the way", "to be honest", "believe me",
-    "yeah", "yep", "nope", "uhhuh", "mmhmm", "right", "sure",
-    "sorry", "apology", "apologies", "excuse", "excuse me",
-    "just", "only", "simply", "sort", "kind", "somehow", "anyhow", "actually speaking"
-}
-STOP_WORDS |= custom_fillers
-
-def spacy_clean(text: str) -> str:
-    doc = nlp(text)
-    tokens = [
-        token.lemma_.lower()
-        for token in doc
-        if token.pos_ in {"NOUN", "PROPN"}
-        and not token.is_stop
-        and not token.is_punct
-    ]
-    return " ".join(tokens)
 
 @app.post("/get_category/", response_model=ComplaintResponse)
 def get_category(data: ComplaintRequest):
-    title_raw = data.title.strip()
-    title_alpha = " ".join(re.findall(r"[a-zA-Z]+", title_raw.lower()))
-    cleaned_title = spacy_clean(title_alpha)
-    print("cleaned_title:", cleaned_title)
+    raw_title = (data.title or "").strip()
+    raw_description = (data.description or "").strip()
 
-    categories = data.categories or []
+    if not raw_title and not raw_description:
+        return ComplaintResponse(predicted_category="other", confidence_score=0.0)
 
-    if not categories:
-        new_cat = clean_and_generate_category_name(cleaned_title)
-        return ComplaintResponse(predicted_category=new_cat)
-
-    try:
-        title_emb = embed_model.encode(cleaned_title, convert_to_tensor=True)
-        cat_embs = embed_model.encode(categories, convert_to_tensor=True)
-    except Exception as e:
-        print("Embedding error:", e)
-        new_cat = clean_and_generate_category_name(cleaned_title)
-        return ComplaintResponse(predicted_category=new_cat)
-
-    sims_mat = util.cos_sim(title_emb, cat_embs)
-
-    sims = sims_mat.squeeze(0).cpu().numpy()
-    best_idx = int(np.argmax(sims))
-    best_score = float(sims[best_idx])
-    best_category = categories[best_idx]
-
-    THRESHOLD = 0.50
-
-    if best_score >= THRESHOLD:
-        return ComplaintResponse(predicted_category=best_category)
+    # Combine title and description to capture rich semantic context
+    if raw_title and raw_description:
+        query_text = f"{raw_title}. {raw_description}"
     else:
-        new_cat = clean_and_generate_category_name(cleaned_title)
-        return ComplaintResponse(predicted_category=new_cat)
+        query_text = raw_title or raw_description
+
+    # Encode complaint into embedding tensor
+    query_embedding = embed_model.encode(query_text, convert_to_tensor=True)
+
+    best_category = "other"
+    best_score = -1.0
+
+    # Multi-anchor cosine similarity search across all 5 pre-defined categories
+    for cat_name in CATEGORY_NAMES:
+        anchor_embeddings = CATEGORY_ANCHORS[cat_name]
+        similarities = util.cos_sim(query_embedding, anchor_embeddings)[0]
+        max_similarity = similarities.max().item()
+
+        if max_similarity > best_score:
+            best_score = max_similarity
+            best_category = cat_name
+
+    # Apply alignment threshold: if aligned, return category, otherwise 'other'
+    final_category = best_category if best_score >= ALIGNMENT_THRESHOLD else "other"
+
+    return ComplaintResponse(
+        predicted_category=final_category,
+        confidence_score=round(best_score, 4)
+    )
+
 
 @app.get("/")
 def home():
-    return {"message": "Working"}
+    return {
+        "status": "online",
+        "engine": "SentenceTransformer (all-MiniLM-L6-v2)",
+        "categories": CATEGORY_NAMES,
+        "threshold": ALIGNMENT_THRESHOLD
+    }
