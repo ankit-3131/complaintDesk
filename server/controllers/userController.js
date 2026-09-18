@@ -50,10 +50,11 @@ export async function handleLogin(req, res) {
   const token = jwt.sign(payload, secret, { expiresIn: "7d" });
 
     // set cookie so browser will send it on subsequent requests from the frontend
+    const isProd = process.env.NODE_ENV === 'production';
     res.cookie("token", token, {
       httpOnly: true,
-      sameSite: "lax",
-      secure: false,
+      sameSite: isProd ? "none" : "lax",
+      secure: isProd,
     });
 
     res.status(200).json({
@@ -120,7 +121,8 @@ export async function getMe(req, res){
 export async function handleLogout(req, res) {
   try {
     // clear cookie
-    res.clearCookie('token', { httpOnly: true, sameSite: 'lax', secure: false });
+    const isProd = process.env.NODE_ENV === 'production';
+    res.clearCookie('token', { httpOnly: true, sameSite: isProd ? 'none' : 'lax', secure: isProd });
     return res.status(200).json({ message: 'Logged out' });
   } catch (err) {
     console.error('logout error', err);
