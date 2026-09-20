@@ -152,3 +152,7 @@ def home():
         "categories": CATEGORY_NAMES,
         "threshold": ALIGNMENT_THRESHOLD
     }
+
+@app.head("/")
+def health_head():
+    return Response(status_code=200)
